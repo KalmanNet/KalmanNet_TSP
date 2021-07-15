@@ -37,7 +37,7 @@ class Model(pyparticleest.models.nlg.NonlinearGaussianInitialGaussian):
             particles_g[k,:] = self.g(torch.tensor(particles[k,:]))
         return particles_g
 
-def PFTest(SysModel, test_input, test_target, n_part=100):
+def PFTest(SysModel, test_input, test_target, n_part=100, init_cond=None):
     
     N_T = test_target.size()[0]
 
@@ -47,12 +47,15 @@ def PFTest(SysModel, test_input, test_target, n_part=100):
     # MSE [Linear]
     MSE_PF_linear_arr = np.empty(N_T)
 
-    PF_out = np.empty((N_T, test_target.size()[1], SysModel.T))
+    PF_out = np.empty((N_T, test_target.size()[1], SysModel.T_test))
 
     start = time.time()
 
     for j in range(N_T):
-        model = Model(SysModel, test_target[j, :, 0])
+        if init_cond is None:
+            model = Model(SysModel, test_target[j, :, 0])
+        else:
+            model = Model(SysModel, x_0=init_cond[j, :])
         y_in = test_input[j, :, :].T.numpy().squeeze()
         sim = simulator.Simulator(model, u=None, y=y_in)
         sim.simulate(n_part, 0)

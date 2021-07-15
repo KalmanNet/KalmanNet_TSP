@@ -70,10 +70,10 @@ class Pipeline_EKF:
 
             for j in range(0, self.N_CV):
                 y_cv = cv_input[j, :, :]
-                self.model.InitSequence(self.ssModel.m1x_0, self.ssModel.T_test)
+                self.model.InitSequence(self.ssModel.m1x_0, self.ssModel.T)
 
-                x_out_cv = torch.empty(self.ssModel.m, self.ssModel.T_test)
-                for t in range(0, self.ssModel.T_test):
+                x_out_cv = torch.empty(self.ssModel.m, self.ssModel.T)
+                for t in range(0, self.ssModel.T):
                     x_out_cv[:, t] = self.model(y_cv[:, t])
 
                 # Compute Training Loss
