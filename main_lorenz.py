@@ -13,7 +13,7 @@ from datetime import datetime
 
 from Plot import Plot_extended as Plot
 
-from filing_paths import path_model, path_session
+from filing_paths import path_model
 import sys
 sys.path.insert(1, path_model)
 from parameters import T, T_test, m1x_0, m2x_0, m, n,delta_t_gen,delta_t
@@ -84,29 +84,31 @@ for rindex in range(0, len(r)):
    sys_model_partialh_optr = SystemModel(f, q[rindex], h_nonlinear, ropt, T, T_test, m, n,'lor')
    sys_model_partialh_optr.InitSequence(m1x_0, m2x_0)
    
-   #Generate and load data DT case
+   ### Generate and load data DT case
    print("Start Data Gen")
-   # T = 2000
+   T = 2000
    DataGen(sys_model, DatafolderName + dataFileName[rindex], T, T_test)
    print("Data Load")
    print(dataFileName[rindex])
    [train_input_long, train_target_long, cv_input, cv_target, test_input, test_target] =  torch.load(DatafolderName + dataFileName[rindex],map_location=cuda0)  
    print("trainset long:",train_target_long.size())
-   # T = 100
-   # [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
-   # print("trainset chopped:",train_target.size())
+   T = 100
+   [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
+   print("trainset chopped:",train_target.size())
    print("testset:",test_target.size())
    print("cvset:",cv_target.size())
    
-   #Generate and load data Decimation case (chopped)
-   # print("Data Gen")
-   # [test_target, test_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_T, h, r[rindex], offset)
-   # print(test_target.size())
-   # [train_target_long, train_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
-   # [cv_target_long, cv_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
+   """
+   ### Generate and load Lorenz Attractor data for decimation case (chopped)
+   print("Data Gen")
+   [test_target, test_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_T, h, r[rindex], offset)
+   print(test_target.size())
+   [train_target_long, train_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
+   [cv_target_long, cv_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
 
-   # [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
-   # [cv_target, cv_input] = Short_Traj_Split(cv_target_long, cv_input_long, T)
+   [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
+   [cv_target, cv_input] = Short_Traj_Split(cv_target_long, cv_input_long, T)
+   """
 
    #Evaluate EKF true
    # [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
@@ -131,19 +133,19 @@ for rindex in range(0, len(r)):
    #             }, EKFfolderName+EKFResultName)
 
    # KNet without model mismatch
-   # modelFolder = 'KNet' + '/'
-   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
-   # KNet_Pipeline.setssModel(sys_model)
-   # KNet_model = KalmanNetNN()
-   # KNet_model.Build(sys_model)
-   # KNet_Pipeline.setModel(KNet_model)
-   # KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=100, learningRate=5e-3, weightDecay=1e-4)
+   modelFolder = 'KNet' + '/'
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   KNet_Pipeline.setssModel(sys_model)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=100, learningRate=5e-3, weightDecay=1e-4)
 
-   # # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
 
-   # KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-   # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
-   # KNet_Pipeline.save()
+   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.save()
    
    # KNet with model mismatch
    # modelFolder = 'KNet' + '/'
