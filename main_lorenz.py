@@ -20,11 +20,11 @@ from parameters import T, T_test, m1x_0, m2x_0, m, n,delta_t_gen,delta_t
 from model import f, h, fInacc, hInacc, fRotate, h_nonlinear
 
 if torch.cuda.is_available():
-   cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
+   dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
    torch.set_default_tensor_type('torch.cuda.FloatTensor')
    print("Running on the GPU")
 else:
-   cuda0 = torch.device("cpu")
+   dev = torch.device("cpu")
    print("Running on the CPU")
 
 
@@ -44,27 +44,31 @@ print("Current Time =", strTime)
 ###  Compare EKF, RTS and RTSNet   ###
 ######################################
 offset = 0
-DatafolderName = 'Simulations/Lorenz_Atractor/data/v0_smallT_NT1000' + '/'
+chop = False
+DatafolderName = 'Simulations/Lorenz_Atractor/data/T200' + '/'
 data_gen = 'data_gen.pt'
-# data_gen_file = torch.load(DatafolderName+data_gen, map_location=cuda0)
+# data_gen_file = torch.load(DatafolderName+data_gen, map_location=dev)
 # [true_sequence] = data_gen_file['All Data']
 
 r2 = torch.tensor([1])
 # r2 = torch.tensor([100, 10, 1, 0.1, 0.01])
-r = torch.sqrt(r2)
+r = torch.sqrt(r2.to(torch.double))
 vdB = 0 # ratio v=q2/r2
 v = 10**(vdB/10)
 
 q2 = torch.mul(v,r2)
-q = torch.sqrt(q2)
+q = torch.sqrt(q2.to(torch.double))
 
-r2optdB = torch.tensor([-1])
+### q and r optimized for EKF
+r2optdB = torch.tensor([3.0103])
 ropt = torch.sqrt(10**(-r2optdB/10))
-print("Searched optimal 1/r2 [dB]: ", 10 * torch.log10(1/ropt**2))
+q2optdB = torch.tensor([18.2391])
+qopt = torch.sqrt(10**(-q2optdB/10))
 
 # traj_resultName = ['traj_lor_KNetFull_rq1030_T2000_NT100.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
-dataFileName = ['r0q0_T20.pt']#,'data_lor_v20_r1e-2_T100.pt','data_lor_v20_r1e-3_T100.pt','data_lor_v20_r1e-4_T100.pt']
-EKFResultName = 'EKF_nonLinearh_rq00_T20' 
+dataFileName = ['data_lor_v20_rq020_T200.pt']#,'data_lor_v20_r1e-2_T100.pt','data_lor_v20_r1e-3_T100.pt','data_lor_v20_r1e-4_T100.pt']
+# EKFResultName = 'EKF_nonLinearh_rq00_T20' 
+
 for rindex in range(0, len(r)):
    print("1/r2 [dB]: ", 10 * torch.log10(1/r[rindex]**2))
    print("1/q2 [dB]: ", 10 * torch.log10(1/q[rindex]**2))
@@ -72,11 +76,11 @@ for rindex in range(0, len(r)):
    sys_model = SystemModel(f, q[rindex], h, r[rindex], T, T_test, m, n,"Lor")
    sys_model.InitSequence(m1x_0, m2x_0)
 
-  #  sys_model_partialf = SystemModel(fInacc, q[rindex], h, r[rindex], T, T_test, m, n,"Lor")
-  #  sys_model_partialf.InitSequence(m1x_0, m2x_0)
+   sys_model_partialf = SystemModel(fInacc, q[rindex], h, r[rindex], T, T_test, m, n,"Lor")
+   sys_model_partialf.InitSequence(m1x_0, m2x_0)
 
-  #  sys_model_partialf_optq = SystemModel(fInacc, qopt, h, r[rindex], T, T_test, m, n,'lor')
-  #  sys_model_partialf_optq.InitSequence(m1x_0, m2x_0)
+   sys_model_partialf_optq = SystemModel(fInacc, qopt, h, r[rindex], T, T_test, m, n,'lor')
+   sys_model_partialf_optq.InitSequence(m1x_0, m2x_0)
 
    sys_model_partialh = SystemModel(f, q[rindex], h_nonlinear, r[rindex], T, T_test, m, n,"Lor")
    sys_model_partialh.InitSequence(m1x_0, m2x_0)
@@ -85,18 +89,25 @@ for rindex in range(0, len(r)):
    sys_model_partialh_optr.InitSequence(m1x_0, m2x_0)
    
    ### Generate and load data DT case
-   print("Start Data Gen")
-   T = 2000
-   DataGen(sys_model, DatafolderName + dataFileName[rindex], T, T_test)
+   # print("Start Data Gen")
+   # DataGen(sys_model, DatafolderName + dataFileName[0], T, T_test,randomInit=False)
    print("Data Load")
-   print(dataFileName[rindex])
-   [train_input_long, train_target_long, cv_input, cv_target, test_input, test_target] =  torch.load(DatafolderName + dataFileName[rindex],map_location=cuda0)  
-   print("trainset long:",train_target_long.size())
-   T = 100
-   [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
-   print("trainset chopped:",train_target.size())
-   print("testset:",test_target.size())
-   print("cvset:",cv_target.size())
+   print(dataFileName[0])
+   [train_input_long,train_target_long, cv_input, cv_target, test_input, test_target] =  torch.load(DatafolderName + dataFileName[0],map_location=dev)  
+   if chop: 
+      print("chop training data")    
+      [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
+      # [cv_target, cv_input] = Short_Traj_Split(cv_target, cv_input, T)
+   else:
+      print("no chopping") 
+      train_target = train_target_long[:,:,0:T]
+      train_input = train_input_long[:,:,0:T] 
+      # cv_target = cv_target[:,:,0:T]
+      # cv_input = cv_input[:,:,0:T]  
+
+   print("trainset size:",train_target.size())
+   print("cvset size:",cv_target.size())
+   print("testset size:",test_target.size())
    
    """
    ### Generate and load Lorenz Attractor data for decimation case (chopped)
@@ -111,12 +122,14 @@ for rindex in range(0, len(r)):
    """
 
    #Evaluate EKF true
-   # [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
-   # #Evaluate EKF partial (h or r)
-   # [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model_partialh, test_input, test_target)
+   print("Evaluate EKF true")
+   [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
+   #Evaluate EKF partial (h or r)
+   print("Evaluate EKF partial")
+   [MSE_EKF_linear_arr_partial, MSE_EKF_linear_avg_partial, MSE_EKF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model_partialh, test_input, test_target)
    #Evaluate EKF partial optq
-  #  [MSE_EKF_linear_arr_partialoptq, MSE_EKF_linear_avg_partialoptq, MSE_EKF_dB_avg_partialoptq, EKF_KG_array_partialoptq, EKF_out_partialoptq] = EKFTest(sys_model_partialf_optq, test_input, test_target)
-  #  #Evaluate EKF partial optr
+   [MSE_EKF_linear_arr_partialoptq, MSE_EKF_linear_avg_partialoptq, MSE_EKF_dB_avg_partialoptq, EKF_KG_array_partialoptq, EKF_out_partialoptq] = EKFTest(sys_model_partialf_optq, test_input, test_target)
+   #Evaluate EKF partial optr
    [MSE_EKF_linear_arr_partialoptr, MSE_EKF_linear_avg_partialoptr, MSE_EKF_dB_avg_partialoptr, EKF_KG_array_partialoptr, EKF_out_partialoptr] = EKFTest(sys_model_partialh_optr, test_input, test_target)
    
 
@@ -133,13 +146,14 @@ for rindex in range(0, len(r)):
    #             }, EKFfolderName+EKFResultName)
 
    # KNet without model mismatch
+   print("KNet with full model info")
    modelFolder = 'KNet' + '/'
    KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
    KNet_Pipeline.setssModel(sys_model)
    KNet_model = KalmanNetNN()
    KNet_model.Build(sys_model)
    KNet_Pipeline.setModel(KNet_model)
-   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=100, learningRate=5e-3, weightDecay=1e-4)
+   KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
 
    # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
 
@@ -148,19 +162,20 @@ for rindex in range(0, len(r)):
    KNet_Pipeline.save()
    
    # KNet with model mismatch
-   # modelFolder = 'KNet' + '/'
-   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
-   # KNet_Pipeline.setssModel(sys_model_partialh)
-   # KNet_model = KalmanNetNN()
-   # KNet_model.Build(sys_model_partialh)
-   # KNet_Pipeline.setModel(KNet_model)
-   # KNet_Pipeline.setTrainingParams(n_Epochs=1000, n_Batch=50, learningRate=1e-3, weightDecay=1e-9)
+   print("KNet with model mismatch")
+   modelFolder = 'KNet' + '/'
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
+   KNet_Pipeline.setssModel(sys_model_partialh)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model_partialh)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
 
-   # # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet_obsmis_rq1030_T2000.pt",map_location=cuda0)  
+   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet_obsmis_rq1030_T2000.pt",map_location=dev)  
 
-   # KNet_Pipeline.NNTrain(N_E, train_input_long, train_target_long, N_CV, cv_input, cv_target)
-   # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
-   # KNet_Pipeline.save()
+   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.save()
 
    # # Save trajectories
    # # trajfolderName = 'KNet' + '/'

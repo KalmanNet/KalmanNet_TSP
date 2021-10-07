@@ -4,10 +4,10 @@ import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
 if torch.cuda.is_available():
-   cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
+   dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
    torch.set_default_tensor_type('torch.cuda.FloatTensor')
 else:
-   cuda0 = torch.device("cpu")
+   dev = torch.device("cpu")
    print("Running on the CPU")
 
 #######################
@@ -15,16 +15,16 @@ else:
 #######################
 
 # Number of Training Examples
-N_E = 3000
+N_E = 1000
 
 # Number of Cross Validation Examples
-N_CV = 10
+N_CV = 100
 
-N_T = 1000
+N_T = 200
 
-# Sequence Length
-# T = 20
-# T_test = 20
+# Sequence Length for Linear Case
+T = 100
+T_test = 100
 
 #################
 ## Design #10 ###
@@ -54,13 +54,13 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 ############
 ## 2 x 2 ###
 ############
-# m = 2
-# n = 2
-# F = F10[0:m, 0:m]
-# H = torch.eye(2)
-# m1_0 = torch.tensor([[0.0], [0.0]]).to(cuda0)
-# # m1x_0_design = torch.tensor([[10.0], [-10.0]])
-# m2_0 = 0 * 0 * torch.eye(m).to(cuda0)
+m = 2
+n = 2
+F = F10[0:m, 0:m]
+H = torch.eye(2)
+m1_0 = torch.tensor([[0.0], [0.0]]).to(dev)
+# m1x_0_design = torch.tensor([[10.0], [-10.0]])
+m2_0 = 0 * 0 * torch.eye(m).to(dev)
 
 
 #############
@@ -70,9 +70,9 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 # n = 5
 # F = F10[0:m, 0:m]
 # H = H10[0:n, 10-m:10]
-# m1_0 = torch.zeros(m, 1).to(cuda0)
-# # m1x_0_design = torch.tensor([[1.0], [-1.0], [2.0], [-2.0], [0.0]]).to(cuda0)
-# m2_0 = 0 * 0 * torch.eye(m).to(cuda0)
+# m1_0 = torch.zeros(m, 1).to(dev)
+# # m1x_0_design = torch.tensor([[1.0], [-1.0], [2.0], [-2.0], [0.0]]).to(dev)
+# m2_0 = 0 * 0 * torch.eye(m).to(dev)
 
 ##############
 ## 10 x 10 ###
@@ -81,9 +81,20 @@ H10 = torch.tensor([[1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0, 1.0],
 # n = 10
 # F = F10[0:m, 0:m]
 # H = H10
-# m1_0 = torch.zeros(m, 1).to(cuda0)
+# m1_0 = torch.zeros(m, 1).to(dev)
 # # m1x_0_design = torch.tensor([[10.0], [-10.0]])
-# m2_0 = 0 * 0 * torch.eye(m).to(cuda0)
+# m2_0 = 0 * 0 * torch.eye(m).to(dev)
+
+# Inaccurate model knowledge based on matrix rotation
+alpha_degree = 10
+rotate_alpha = torch.tensor([alpha_degree/180*torch.pi]).to(dev)
+cos_alpha = torch.cos(rotate_alpha)
+sin_alpha = torch.sin(rotate_alpha)
+rotate_matrix = torch.tensor([[cos_alpha, -sin_alpha],
+                              [sin_alpha, cos_alpha]]).to(dev)
+# print(rotate_matrix)
+F_rotated = torch.mm(F,rotate_matrix) #inaccurate process model
+H_rotated = torch.mm(H,rotate_matrix) #inaccurate observation model
 
 def DataGen_True(SysModel_data, fileName, T):
 
@@ -130,12 +141,12 @@ def DataLoader(fileName):
 
 def DataLoader_GPU(fileName):
     [training_input, training_target, cv_input, cv_target, test_input, test_target] = torch.utils.data.DataLoader(torch.load(fileName),pin_memory = False)
-    training_input = training_input.squeeze().to(cuda0)
-    training_target = training_target.squeeze().to(cuda0)
-    cv_input = cv_input.squeeze().to(cuda0)
-    cv_target =cv_target.squeeze().to(cuda0)
-    test_input = test_input.squeeze().to(cuda0)
-    test_target = test_target.squeeze().to(cuda0)
+    training_input = training_input.squeeze().to(dev)
+    training_target = training_target.squeeze().to(dev)
+    cv_input = cv_input.squeeze().to(dev)
+    cv_target =cv_target.squeeze().to(dev)
+    test_input = test_input.squeeze().to(dev)
+    test_target = test_target.squeeze().to(dev)
     return [training_input, training_target, cv_input, cv_target, test_input, test_target]
 
 def DecimateData(all_tensors, t_gen,t_mod, offset=0):

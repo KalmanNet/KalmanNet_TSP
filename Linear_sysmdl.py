@@ -3,9 +3,8 @@ from torch.distributions.multivariate_normal import MultivariateNormal
 
 class SystemModel:
 
-    def __init__(self, F, q, H, r, T, T_test, modelname, outlier_p=0,rayleigh_sigma=10000):
+    def __init__(self, F, q, H, r, T, T_test, outlier_p=0,rayleigh_sigma=10000):
 
-        self.modelname = modelname
         self.outlier_p = outlier_p
         self.rayleigh_sigma = rayleigh_sigma
         ####################
@@ -135,7 +134,8 @@ class SystemModel:
     ######################
     ### Generate Batch ###
     ######################
-    def GenerateBatch(self, size, T):
+
+    def GenerateBatch(self, size, T, randomInit=False, seqInit=False, T_test=0):
 
         # Allocate Empty Array for Input
         self.Input = torch.empty(size, self.n, T)
@@ -144,9 +144,21 @@ class SystemModel:
         self.Target = torch.empty(size, self.m, T)
 
         ### Generate Examples
+        initConditions = self.m1x_0
+
         for i in range(0, size):
             # Generate Sequence
 
+            # Randomize initial conditions to get a rich dataset
+            if(randomInit):
+                variance = 100
+                initConditions = torch.rand_like(self.m1x_0) * variance
+            if(seqInit):
+                initConditions = self.x_prev
+                if((i*T % T_test)==0):
+                    initConditions = torch.zeros_like(self.m1x_0)
+
+            self.InitSequence(initConditions, self.m2x_0)
             self.GenerateSequence(self.Q, self.R, T)
 
             # Training sequence input

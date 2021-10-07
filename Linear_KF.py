@@ -4,10 +4,10 @@ Theoretical Linear Kalman
 import torch
 
 if torch.cuda.is_available():
-    cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
+    dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
     torch.set_default_tensor_type('torch.cuda.FloatTensor')
 else:
-   cpu0 = torch.device("cpu")
+   dev = torch.device("cpu")
    print("Running on the CPU")
 
 class KalmanFilter:
@@ -81,8 +81,8 @@ class KalmanFilter:
     #########################
     def GenerateSequence(self, y, T):
         # Pre allocate an array for predicted state and variance
-        self.x = torch.empty(size=[self.m, T]).to(cuda0)
-        self.sigma = torch.empty(size=[self.m, self.m, T]).to(cuda0)
+        self.x = torch.empty(size=[self.m, T]).to(dev)
+        self.sigma = torch.empty(size=[self.m, self.m, T]).to(dev)
 
         self.m1x_posterior = self.m1x_0
         self.m2x_posterior = self.m2x_0
