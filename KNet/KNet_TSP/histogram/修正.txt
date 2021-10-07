@@ -1,0 +1,3 @@
+7.5晚上的文件partial EKF的结果对应为
+'MSE_ERTS_linear_arr'  对应 MSE_EKF_linear_arr_partial
+'MSE_ERTS_dB_avg'   对应 MSE_EKF_dB_avg_partial
