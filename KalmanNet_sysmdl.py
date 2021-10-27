@@ -87,7 +87,10 @@ class SystemModel:
     ### Generate Sequence ###
     #########################
     def GenerateSequence(self, Q_gen, R_gen, T):
-
+        # Pre allocate an array for current state
+        self.x = torch.empty(size=[self.m, T])
+        # Pre allocate an array for current observation
+        self.y = torch.empty(size=[self.n, T])
         # Set x0 to be x previous
         self.x_prev = self.m1x_0
         xt = self.x_prev
@@ -141,7 +144,7 @@ class SystemModel:
     ######################
     ### Generate Batch ###
     ######################
-    def GenerateBatch(self, size, gain, T, randomInit=False, seqInit=False, T_test=0):
+    def GenerateBatch(self, size, T, randomInit=False, seqInit=False, T_test=0):
 
         # Allocate Empty Array for Input
         self.Input = torch.empty(size, self.n, T)
@@ -165,7 +168,7 @@ class SystemModel:
                     initConditions = torch.zeros_like(self.m1x_0)
 
             self.InitSequence(initConditions, self.m2x_0)
-            self.GenerateSequence(self.Q, self.R)
+            self.GenerateSequence(self.Q, self.R, T)
 
             # Training sequence input
             self.Input[i, :, :] = self.y
