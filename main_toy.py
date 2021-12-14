@@ -8,7 +8,7 @@ from Pipeline_KF import Pipeline_KF
 from KalmanNet_nn import KalmanNetNN
 from datetime import datetime
 
-from KalmanFilter_test import KFTest
+from EKF_test import EKFTest
 from UKF_test import UKFTest
 from PF_test import PFTest
 from Plot import Plot_RTS as Plot
@@ -83,9 +83,9 @@ for index in range(0,len(r2)):
    ### Evaluate Kalman Filter ###
    ##############################
    print("Evaluate Kalman Filter True")
-   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
+   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = EKFTest(sys_model, test_input, test_target)
    print("Evaluate Kalman Filter Partial")
-   [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = KFTest(sys_model_partial, test_input, test_target)
+   [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = EKFTest(sys_model_partial, test_input, test_target)
 
    ###########################
    ### Evaluate PF and UKF ###
