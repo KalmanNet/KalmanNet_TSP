@@ -10,7 +10,7 @@ n = 2
 m1x_0 = torch.ones(m, 1) * 0.1
 m2x_0 = torch.zeros(m,m)
 
-T = 100
+T = 10
 T_test = 100
 delta_t = 0
 delta_t_gen = delta_t

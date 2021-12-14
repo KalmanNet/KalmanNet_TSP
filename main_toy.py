@@ -79,17 +79,23 @@ for index in range(0,len(r2)):
    print("cvset size:",cv_target.size())
    print("testset size:",test_target.size())
 
-   ##############################
-   ### Evaluate Kalman Filter ###
-   ##############################
-   print("Evaluate Kalman Filter True")
-   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = EKFTest(sys_model, test_input, test_target)
-   print("Evaluate Kalman Filter Partial")
-   [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = EKFTest(sys_model_partial, test_input, test_target)
 
-   ###########################
-   ### Evaluate PF and UKF ###
-   ###########################
+
+   ################################
+   ### Evaluate EKF, UKF and PF ###
+   ################################
+   q = torch.sqrt(q2[index]*10)
+   print("Searched optimal 1/q2 [dB]: ", 10 * torch.log10(1/q**2))
+   sys_model = SystemModel(f, q, h, r, T, T_test, m, n,"Toy")
+   sys_model.InitSequence(m1x_0, m2x_0)
+
+   sys_model_partial = SystemModel(fInacc, q, h, r, T, T_test, m, n,"Toy")
+   sys_model_partial.InitSequence(m1x_0, m2x_0)
+   print("Evaluate Kalman Filter True")
+   [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
+   print("Evaluate Kalman Filter Partial")
+   [MSE_KF_linear_arr_partial, MSE_KF_linear_avg_partial, MSE_KF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model_partial, test_input, test_target)
+
    print("Evaluate UKF True")
    [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = UKFTest(sys_model, test_input, test_target)
    print("Evaluate UKF Partial")
