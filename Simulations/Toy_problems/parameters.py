@@ -13,6 +13,9 @@ m2x_0 = torch.zeros(m,m)
 T = 100
 T_test = 100
 delta_t = 0
+delta_t_gen = delta_t
+variance = 0
+
 #######################
 ### True Parameters ###
 #######################
