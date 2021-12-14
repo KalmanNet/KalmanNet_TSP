@@ -4,7 +4,7 @@ import torch
 from torch import autograd
 
 from parameters import alpha_mot, beta_mot, phi_mot, a_mot, alpha_obs, beta_obs, a_obs
-from parameters import alpha_mot_mod, beta_mot_mod, phi_mot_mod, a_mot_mod, beta_obs_mod, a_obs_mod
+from parameters import alpha_mot_mod, beta_mot_mod, phi_mot_mod, a_mot_mod, alpha_obs_mod, beta_obs_mod, a_obs_mod
 
 
 def f(x):

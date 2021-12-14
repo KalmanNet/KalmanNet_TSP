@@ -10,15 +10,16 @@ n = 2
 m1x_0 = torch.ones(m, 1) * 0.1
 m2x_0 = torch.zeros(m,m)
 
-T = 10
-T_test = 10
+T = 100
+T_test = 100
+delta_t = 0
 #######################
 ### True Parameters ###
 #######################
 alpha_mot = 0.9
 beta_mot = 1.1
 phi_mot = math.pi/10
-a_mot = 1
+a_mot = 0.01
 alpha_obs = 1
 beta_obs = 1
 a_obs = 0
@@ -37,7 +38,8 @@ R = (sigma_r**2) * torch.eye(m)
 alpha_mot_mod = 1
 beta_mot_mod = 1
 phi_mot_mod = 0
-a_mot_mod = 1
+a_mot_mod = 0
+alpha_obs_mod = 1
 beta_obs_mod = 1
 a_obs_mod = 0
 
