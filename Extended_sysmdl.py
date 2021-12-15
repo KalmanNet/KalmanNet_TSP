@@ -27,6 +27,8 @@ class SystemModel:
         self.m = m
 
         self.q = q
+
+        self.delta_t = delta_t
         if self.modelname == 'pendulum':
             self.Q = q * q * torch.tensor([[(delta_t**3)/3, (delta_t**2)/2],
                                            [(delta_t**2)/2, delta_t]])

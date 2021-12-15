@@ -47,6 +47,8 @@ r2 = torch.tensor([16, 4, 1, 0.1, 0.01])
 vdB = 0 # ratio v=q2/r2
 v = 10**(vdB/10)
 q2 = torch.mul(v,r2)
+qopt = torch.sqrt(q2)
+# qopt = torch.tensor([0.2, 4, 1, 0.1, 0.01])
 
 for index in range(0,len(r2)):
    ####################
@@ -84,12 +86,12 @@ for index in range(0,len(r2)):
    ################################
    ### Evaluate EKF, UKF and PF ###
    ################################
-   q = torch.sqrt(q2[index]*10)
-   print("Searched optimal 1/q2 [dB]: ", 10 * torch.log10(1/q**2))
-   sys_model = SystemModel(f, q, h, r, T, T_test, m, n,"Toy")
+   
+   print("Searched optimal 1/q2 [dB]: ", 10 * torch.log10(1/qopt[index]**2))
+   sys_model = SystemModel(f, qopt[index], h, r, T, T_test, m, n,"Toy")
    sys_model.InitSequence(m1x_0, m2x_0)
 
-   sys_model_partial = SystemModel(fInacc, q, h, r, T, T_test, m, n,"Toy")
+   sys_model_partial = SystemModel(fInacc, qopt[index], h, r, T, T_test, m, n,"Toy")
    sys_model_partial.InitSequence(m1x_0, m2x_0)
    print("Evaluate Kalman Filter True")
    [MSE_EKF_linear_arr, MSE_EKF_linear_avg, MSE_EKF_dB_avg, EKF_KG_array, EKF_out] = EKFTest(sys_model, test_input, test_target)
@@ -97,14 +99,14 @@ for index in range(0,len(r2)):
    [MSE_KF_linear_arr_partial, MSE_KF_linear_avg_partial, MSE_KF_dB_avg_partial, EKF_KG_array_partial, EKF_out_partial] = EKFTest(sys_model_partial, test_input, test_target)
 
    print("Evaluate UKF True")
-   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = UKFTest(sys_model, test_input, test_target)
+   [MSE_UKF_linear_arr, MSE_UKF_linear_avg, MSE_UKF_dB_avg, UKF_out] = UKFTest(sys_model, test_input, test_target)
    print("Evaluate UKF Partial")
-   [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = UKFTest(sys_model_partial, test_input, test_target)
+   [MSE_UKF_linear_arr_partial, MSE_UKF_linear_avg_partial, MSE_UKF_dB_avg_partial, UKF_out_partial] = UKFTest(sys_model_partial, test_input, test_target)
   
    print("Evaluate PF True")
-   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = PFTest(sys_model, test_input, test_target)
+   [MSE_PF_linear_arr, MSE_PF_linear_avg, MSE_PF_dB_avg, PF_out] = PFTest(sys_model, test_input, test_target)
    print("Evaluate PF Partial")
-   [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = PFTest(sys_model_partial, test_input, test_target)
+   [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial] = PFTest(sys_model_partial, test_input, test_target)
 
 
    # DatafolderName = 'Data' + '/'

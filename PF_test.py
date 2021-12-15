@@ -47,7 +47,7 @@ def PFTest(SysModel, test_input, test_target, n_part=100):
     # MSE [Linear]
     MSE_PF_linear_arr = np.empty(N_T)
 
-    PF_out = np.empty((N_T, test_target.size()[1], SysModel.T))
+    PF_out = np.empty((N_T, test_target.size()[1], SysModel.T_test))
 
     start = time.time()
 
@@ -68,6 +68,9 @@ def PFTest(SysModel, test_input, test_target, n_part=100):
     MSE_PF_linear_avg = np.mean(MSE_PF_linear_arr)
     MSE_PF_dB_avg = 10 * np.log10(MSE_PF_linear_avg)
 
-    return [MSE_PF_linear_arr, MSE_PF_linear_avg, MSE_PF_dB_avg, PF_out, t]
+    print("Particle Filter - MSE LOSS:", MSE_PF_dB_avg, "[dB]")
+    # Print Run Time
+    print("Inference Time:", t)
+    return [MSE_PF_linear_arr, MSE_PF_linear_avg, MSE_PF_dB_avg, PF_out]
 
 

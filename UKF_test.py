@@ -2,12 +2,8 @@ import torch.nn as nn
 import torch
 import time
 
-from filterpy.kalman import UnscentedKalmanFilter 
+from filterpy.kalman import UnscentedKalmanFilter, MerweScaledSigmaPoints, JulierSigmaPoints 
 
-from filing_paths import path_model
-import sys
-sys.path.insert(1, path_model)
-from parameters import delta_t
 
 def UKFTest(SysModel, test_input, test_target, modelKnowledge='full', allStates=True, init_cond=None):
 
@@ -18,34 +14,43 @@ def UKFTest(SysModel, test_input, test_target, modelKnowledge='full', allStates=
     
     # MSE [Linear]
     MSE_UKF_linear_arr = torch.empty(N_T)
+    # points = JulierSigmaPoints(n=SysModel.m)
+    points = MerweScaledSigmaPoints(SysModel.m, alpha=.1, beta=2., kappa=-1)
 
-    UKF = UnscentedKalmanFilter(dim_x=SysModel.m, dim_z=SysModel.n, dt=delta_t, fx=SysModel.f, hx=SysModel.h)
-    UKF.x = SysModel.m1x_0 # initial state
-    UKF.P = SysModel.m2x_0 # initial uncertainty
-    UKF.R = SysModel.R 
-    UKF.Q = SysModel.Q
+    def fx(x, dt):
+        return SysModel.f(torch.from_numpy(x)).numpy()
 
-    UKF_out = torch.empty([N_T, SysModel.m, SysModel.T])
+    UKF = UnscentedKalmanFilter(dim_x=SysModel.m, dim_z=SysModel.n, dt=SysModel.delta_t, fx=fx, hx=SysModel.h,points=points)
+    UKF.x = SysModel.m1x_0.numpy() # initial state
+    UKF.P = (SysModel.m2x_0 + 1e-5*torch.eye(SysModel.m)).numpy() # initial uncertainty
+    UKF.R = SysModel.R.numpy()
+    UKF.Q = SysModel.Q.numpy()
+ 
+    UKF_out = torch.empty([N_T, SysModel.m, SysModel.T_test]) 
 
     start = time.time()
     for j in range(0, N_T):
         if init_cond is not None:
-            UKF.x = torch.unsqueeze(init_cond[j, :], 1)
+            UKF.x = torch.unsqueeze(init_cond[j, :], 1).numpy()
         
-        for z in test_input:
+        for z in range(0, SysModel.T_test):
             UKF.predict()
-            UKF.update(z)
+            UKF.update(test_input[j,:,z].numpy())       
+            UKF_out[j,:,z] = torch.from_numpy(UKF.x)
 
         if allStates:
-            MSE_UKF_linear_arr[j] = loss_fn(UKF.x, test_target[j, :, :]).item()
+            MSE_UKF_linear_arr[j] = loss_fn(UKF_out[j,:,:], test_target[j, :, :]).item()
         else:
             loc = torch.tensor([True, False, True, False])
-            MSE_UKF_linear_arr[j] = loss_fn(UKF.x[loc, :], test_target[j, :, :]).item()
-        UKF_out[j, :, :] = UKF.x
+            MSE_UKF_linear_arr[j] = loss_fn(UKF_out[j,:,:][loc, :], test_target[j, :, :]).item()
+
     end = time.time()
     t = end - start
 
     MSE_UKF_linear_avg = torch.mean(MSE_UKF_linear_arr)
     MSE_UKF_dB_avg = 10 * torch.log10(MSE_UKF_linear_avg)
 
-    return [MSE_UKF_linear_arr, MSE_UKF_linear_avg, MSE_UKF_dB_avg, UKF_out, t]
+    print("UKF - MSE LOSS:", MSE_UKF_dB_avg, "[dB]")
+    # Print Run Time
+    print("Inference Time:", t)
+    return [MSE_UKF_linear_arr, MSE_UKF_linear_avg, MSE_UKF_dB_avg, UKF_out]

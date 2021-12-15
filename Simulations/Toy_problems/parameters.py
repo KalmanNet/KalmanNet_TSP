@@ -12,7 +12,7 @@ m2x_0 = torch.zeros(m,m)
 
 T = 10
 T_test = 100
-delta_t = 0
+delta_t = 1e-5
 delta_t_gen = delta_t
 variance = 0
 
