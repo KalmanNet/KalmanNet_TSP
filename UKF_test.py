@@ -18,7 +18,7 @@ def UKFTest(SysModel, test_input, test_target, modelKnowledge='full', allStates=
     points = MerweScaledSigmaPoints(SysModel.m, alpha=.1, beta=2., kappa=-1)
 
     def fx(x, dt):
-        return SysModel.f(torch.from_numpy(x)).numpy()
+        return SysModel.f(torch.from_numpy(x).float()).numpy()
 
     UKF = UnscentedKalmanFilter(dim_x=SysModel.m, dim_z=SysModel.n, dt=SysModel.delta_t, fx=fx, hx=SysModel.h,points=points)
     UKF.x = SysModel.m1x_0.numpy() # initial state

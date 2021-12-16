@@ -54,7 +54,7 @@ data_gen = 'data_gen.pt'
 # data_gen_file = torch.load(DatafolderName+data_gen, map_location=dev)
 # [true_sequence] = data_gen_file['All Data']
 
-r2 = torch.tensor([1])
+r2 = torch.tensor([1,0.1,0.01,1e-3,1e-4])
 # r2 = torch.tensor([100, 10, 1, 0.1, 0.01])
 r = torch.sqrt(r2)
 vdB = -20 # ratio v=q2/r2
@@ -66,32 +66,32 @@ q = torch.sqrt(q2)
 ### q and r optimized for EKF
 r2optdB = torch.tensor([3.0103])
 ropt = torch.sqrt(10**(-r2optdB/10))
-q2optdB = torch.tensor([18.2391])
+q2optdB = torch.tensor([18.2391,28.2391,38.2391,48,55])
 qopt = torch.sqrt(10**(-q2optdB/10))
 
 # traj_resultName = ['traj_lor_KNetFull_rq1030_T2000_NT100.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
 dataFileName = ['data_lor_v20_rq020_T2000.pt']#,'data_lor_v20_r1e-2_T100.pt','data_lor_v20_r1e-3_T100.pt','data_lor_v20_r1e-4_T100.pt']
 # EKFResultName = 'EKF_nonLinearh_rq00_T20' 
 
-for rindex in range(0, len(r)):
-   print("1/r2 [dB]: ", 10 * torch.log10(1/r[rindex]**2))
-   print("1/q2 [dB]: ", 10 * torch.log10(1/q[rindex]**2))
+for index in range(0, len(r)):
+   print("1/r2 [dB]: ", 10 * torch.log10(1/r[index]**2))
+   print("1/q2 [dB]: ", 10 * torch.log10(1/q[index]**2))
    
    #############################
    ### Prepare System Models ###
    #############################
 
-   sys_model = SystemModel(f, q[rindex], h, r[rindex], T, T_test, m, n,"Lor")
+   sys_model = SystemModel(f, qopt[index], h, r[index], T, T_test, m, n,"Lor")
    sys_model.InitSequence(m1x_0, m2x_0)
 
-   sys_model_partialf = SystemModel(fInacc, q[rindex], h, r[rindex], T, T_test, m, n,"Lor")
-   sys_model_partialf.InitSequence(m1x_0, m2x_0)
+   # sys_model_partialf = SystemModel(fInacc, q[index], h, r[index], T, T_test, m, n,"Lor")
+   # sys_model_partialf.InitSequence(m1x_0, m2x_0)
 
-   sys_model_partialh = SystemModel(f, q[rindex], h_nonlinear, r[rindex], T, T_test, m, n,"Lor")
-   sys_model_partialh.InitSequence(m1x_0, m2x_0)
+   # sys_model_partialh = SystemModel(f, q[index], h_nonlinear, r[index], T, T_test, m, n,"Lor")
+   # sys_model_partialh.InitSequence(m1x_0, m2x_0)
 
-   sys_model_partialh_optr = SystemModel(f, q[rindex], h_nonlinear, ropt, T, T_test, m, n,'lor')
-   sys_model_partialh_optr.InitSequence(m1x_0, m2x_0)
+   # sys_model_partialh_optr = SystemModel(f, q[index], h_nonlinear, ropt, T, T_test, m, n,'lor')
+   # sys_model_partialh_optr.InitSequence(m1x_0, m2x_0)
    
    #################################
    ### Generate and load DT data ###
@@ -141,20 +141,35 @@ for rindex in range(0, len(r)):
    print("Evaluate PF True")
    [MSE_PF_linear_arr, MSE_PF_linear_avg, MSE_PF_dB_avg, PF_out] = PFTest(sys_model, test_input, test_target)
    
-   for searchindex in range(0, len(qopt)):
-      print("\n Searched optimal 1/q2 [dB]: ", 10 * torch.log10(1/qopt[searchindex]**2))
-      sys_model_partialf_optq = SystemModel(fInacc, qopt[searchindex], h, r[rindex], T, T_test, m, n,'lor')
-      sys_model_partialf_optq.InitSequence(m1x_0, m2x_0)
 
-      #Evaluate partial_f opt_q
-      print("Evaluate EKF Partial")
-      [MSE_EKF_linear_arr_partialoptq, MSE_EKF_linear_avg_partialoptq, MSE_EKF_dB_avg_partialoptq, EKF_KG_array_partialoptq, EKF_out_partialoptq] = EKFTest(sys_model_partialf_optq, test_input, test_target)
-      
-      print("Evaluate UKF Partial")
-      [MSE_UKF_linear_arr_partial, MSE_UKF_linear_avg_partial, MSE_UKF_dB_avg_partial, UKF_out_partial] = UKFTest(sys_model_partialf_optq, test_input, test_target)
+   sys_model_partialf_optq = SystemModel(fInacc, qopt[index], h, r[index], T, T_test, m, n,'lor')
+   sys_model_partialf_optq.InitSequence(m1x_0, m2x_0)
+
+   #Evaluate partial_f opt_q
+   print("Evaluate EKF Partial")
+   [MSE_EKF_linear_arr_partialoptq, MSE_EKF_linear_avg_partialoptq, MSE_EKF_dB_avg_partialoptq, EKF_KG_array_partialoptq, EKF_out_partialoptq] = EKFTest(sys_model_partialf_optq, test_input, test_target)
    
-      print("Evaluate PF Partial")
-      [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial] = PFTest(sys_model_partialf_optq, test_input, test_target)
+   print("Evaluate UKF Partial")
+   [MSE_UKF_linear_arr_partial, MSE_UKF_linear_avg_partial, MSE_UKF_dB_avg_partial, UKF_out_partial] = UKFTest(sys_model_partialf_optq, test_input, test_target)
+
+   print("Evaluate PF Partial")
+   [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial] = PFTest(sys_model_partialf_optq, test_input, test_target)
+
+   ### grid search for benchmarks
+   # for searchindex in range(0, len(qopt)):
+   #    print("\n Searched optimal 1/q2 [dB]: ", 10 * torch.log10(1/qopt[searchindex]**2))
+   #    sys_model_partialf_optq = SystemModel(fInacc, qopt[searchindex], h, r[rindex], T, T_test, m, n,'lor')
+   #    sys_model_partialf_optq.InitSequence(m1x_0, m2x_0)
+
+   #    #Evaluate partial_f opt_q
+   #    print("Evaluate EKF Partial")
+   #    [MSE_EKF_linear_arr_partialoptq, MSE_EKF_linear_avg_partialoptq, MSE_EKF_dB_avg_partialoptq, EKF_KG_array_partialoptq, EKF_out_partialoptq] = EKFTest(sys_model_partialf_optq, test_input, test_target)
+      
+   #    print("Evaluate UKF Partial")
+   #    [MSE_UKF_linear_arr_partial, MSE_UKF_linear_avg_partial, MSE_UKF_dB_avg_partial, UKF_out_partial] = UKFTest(sys_model_partialf_optq, test_input, test_target)
+   
+   #    print("Evaluate PF Partial")
+   #    [MSE_PF_linear_arr_partial, MSE_PF_linear_avg_partial, MSE_PF_dB_avg_partial, PF_out_partial] = PFTest(sys_model_partialf_optq, test_input, test_target)
 
    
    #Evaluate EKF partial optr
