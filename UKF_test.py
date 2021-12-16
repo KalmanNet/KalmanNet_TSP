@@ -20,7 +20,10 @@ def UKFTest(SysModel, test_input, test_target, modelKnowledge='full', allStates=
     def fx(x, dt):
         return SysModel.f(torch.from_numpy(x).float()).numpy()
 
-    UKF = UnscentedKalmanFilter(dim_x=SysModel.m, dim_z=SysModel.n, dt=SysModel.delta_t, fx=fx, hx=SysModel.h,points=points)
+    def hx(x):
+        return SysModel.h(torch.from_numpy(x).float()).numpy()
+
+    UKF = UnscentedKalmanFilter(dim_x=SysModel.m, dim_z=SysModel.n, dt=SysModel.delta_t, fx=fx, hx=hx,points=points)
     UKF.x = SysModel.m1x_0.numpy() # initial state
     UKF.P = (SysModel.m2x_0 + 1e-5*torch.eye(SysModel.m)).numpy() # initial uncertainty
     UKF.R = SysModel.R.numpy()
