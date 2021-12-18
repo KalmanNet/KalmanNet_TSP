@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import random
+import time
 from Plot import Plot
 
 
@@ -170,6 +171,8 @@ class Pipeline_EKF:
         
         x_out_array = torch.empty(self.N_T,self.ssModel.m, self.ssModel.T_test)
 
+        start = time.time()
+
         for j in range(0, self.N_T):
 
             y_mdl_tst = test_input[j, :, :]
@@ -183,14 +186,25 @@ class Pipeline_EKF:
 
             self.MSE_test_linear_arr[j] = loss_fn(x_out_test, test_target[j, :, :]).item()
             x_out_array[j,:,:] = x_out_test
+        
+        end = time.time()
+        t = end - start
 
         # Average
         self.MSE_test_linear_avg = torch.mean(self.MSE_test_linear_arr)
         self.MSE_test_dB_avg = 10 * torch.log10(self.MSE_test_linear_avg)
 
+        # Standard deviation
+        self.MSE_test_dB_std = torch.std(self.MSE_test_linear_arr, unbiased=True)
+        self.MSE_test_dB_std = 10 * torch.log10(self.MSE_test_dB_std)
+
         # Print MSE Cross Validation
         str = self.modelName + "-" + "MSE Test:"
         print(str, self.MSE_test_dB_avg, "[dB]")
+        str = self.modelName + "-" + "STD Test:"
+        print(str, self.MSE_test_dB_std, "[dB]")
+        # Print Run Time
+        print("Inference Time:", t)
 
         return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_array]
 

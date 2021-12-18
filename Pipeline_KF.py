@@ -1,6 +1,7 @@
 import torch
 import torch.nn as nn
 import random
+import time
 from Plot import Plot
 
 
@@ -167,6 +168,8 @@ class Pipeline_KF:
         self.model.eval()
 
         torch.no_grad()
+        
+        start = time.time()
 
         for j in range(0, self.N_T):
 
@@ -181,13 +184,26 @@ class Pipeline_KF:
 
             self.MSE_test_linear_arr[j] = loss_fn(x_out_test, test_target[j, :, :]).item()
 
+        end = time.time()
+        t = end - start
+
         # Average
         self.MSE_test_linear_avg = torch.mean(self.MSE_test_linear_arr)
         self.MSE_test_dB_avg = 10 * torch.log10(self.MSE_test_linear_avg)
 
+        # Standard deviation
+        self.MSE_test_dB_std = torch.std(self.MSE_test_linear_arr, unbiased=True)
+        self.MSE_test_dB_std = 10 * torch.log10(self.MSE_test_dB_std)
+
         # Print MSE Cross Validation
         str = self.modelName + "-" + "MSE Test:"
         print(str, self.MSE_test_dB_avg, "[dB]")
+        str = self.modelName + "-" + "STD Test:"
+        print(str, self.MSE_test_dB_std, "[dB]")
+        # Print Run Time
+        print("Inference Time:", t)
+
+        return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_test]
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 

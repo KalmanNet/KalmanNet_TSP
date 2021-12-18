@@ -52,8 +52,12 @@ def UKFTest(SysModel, test_input, test_target, modelKnowledge='full', allStates=
 
     MSE_UKF_linear_avg = torch.mean(MSE_UKF_linear_arr)
     MSE_UKF_dB_avg = 10 * torch.log10(MSE_UKF_linear_avg)
+    # Standard deviation
+    MSE_UKF_dB_std = torch.std(MSE_UKF_linear_arr, unbiased=True)
+    MSE_UKF_dB_std = 10 * torch.log10(MSE_UKF_dB_std)
 
     print("UKF - MSE LOSS:", MSE_UKF_dB_avg, "[dB]")
+    print("UKF - MSE STD:", MSE_UKF_dB_std, "[dB]")
     # Print Run Time
     print("Inference Time:", t)
     return [MSE_UKF_linear_arr, MSE_UKF_linear_avg, MSE_UKF_dB_avg, UKF_out]
