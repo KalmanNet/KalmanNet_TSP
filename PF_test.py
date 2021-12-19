@@ -68,8 +68,8 @@ def PFTest(SysModel, test_input, test_target, n_part=100):
     MSE_PF_linear_avg = np.mean(MSE_PF_linear_arr)
     MSE_PF_dB_avg = 10 * np.log10(MSE_PF_linear_avg)
     # Standard deviation
-    MSE_PF_dB_std = torch.std(MSE_PF_linear_arr, unbiased=True)
-    MSE_PF_dB_std = 10 * torch.log10(MSE_PF_dB_std)
+    MSE_PF_dB_std = np.std(MSE_PF_linear_arr, unbiased=True)
+    MSE_PF_dB_std = 10 * np.log10(MSE_PF_dB_std)
 
     print("PF - MSE LOSS:", MSE_PF_dB_avg, "[dB]")
     print("PF - MSE STD:", MSE_PF_dB_std, "[dB]")

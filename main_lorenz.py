@@ -69,11 +69,18 @@ rsearch = torch.sqrt(10**(-r2searchdB/10))
 q2searchdB = torch.tensor([20,15,10])
 qsearch = torch.sqrt(10**(-q2searchdB/10))
 
-### q and r optimized for EKF
+### q and r optimized for filters
 r2optdB = torch.tensor([3.0103])
 ropt = torch.sqrt(10**(-r2optdB/10))
+
+r2optdB_partial = torch.tensor([3.0103])
+ropt_partial = torch.sqrt(10**(-r2optdB_partial/10))
+
 q2optdB = torch.tensor([18.2391,28.2391,38.2391,48,55])
 qopt = torch.sqrt(10**(-q2optdB/10))
+
+q2optdB_partial = torch.tensor([18.2391,28.2391,38.2391,48,55])
+qopt_partial = torch.sqrt(10**(-q2optdB_partial/10))
 
 # traj_resultName = ['traj_lor_KNetFull_rq1030_T2000_NT100.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
 dataFileName = ['data_lor_v20_rq020_T2000.pt','data_lor_v20_rq1030_T2000.pt','data_lor_v20_rq2040_T2000.pt','data_lor_v20_rq3050_T2000.pt','data_lor_v20_rq4060_T2000.pt']#,'data_lor_v20_r1e-2_T100.pt']
@@ -92,7 +99,7 @@ for index in range(0, len(r)):
    sys_model_optq = SystemModel(f, qopt[index], h, r[index], T, T_test, m, n,"Lor")
    sys_model_optq.InitSequence(m1x_0, m2x_0)
 
-   sys_model_partialf_optq = SystemModel(fInacc, qopt[index], h, r[index], T, T_test, m, n,"Lor")
+   sys_model_partialf_optq = SystemModel(fInacc, qopt_partial[index], h, r[index], T, T_test, m, n,"Lor")
    sys_model_partialf_optq.InitSequence(m1x_0, m2x_0)
 
    # sys_model_partialh = SystemModel(f, q[index], h_nonlinear, r[index], T, T_test, m, n,"Lor")
@@ -249,64 +256,68 @@ for index in range(0, len(r)):
                # 'MSE_EKF_dB_avg_partialoptr': MSE_EKF_dB_avg_partialoptr,
                }, FilterfolderName+PFResultName[index])
    
-   #####################
-   ### Evaluate KNet ###
-   #####################
-   ### KNet without model mismatch
-   # print("KNet with full model info")
-   # modelFolder = 'KNet' + '/'
-   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
-   # KNet_Pipeline.setssModel(sys_model)
-   # KNet_model = KalmanNetNN()
-   # KNet_model.Build(sys_model)
-   # KNet_Pipeline.setModel(KNet_model)
-   # KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
+#####################
+### Evaluate KNet ###
+#####################
+### KNet without model mismatch
+# sys_model = SystemModel(f, q[0], h, r[0], T, T_test, m, n,"Lor")# arbitary q and r
+# sys_model.InitSequence(m1x_0, m2x_0)
+# print("KNet with full model info")
+# modelFolder = 'KNet' + '/'
+# KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+# KNet_Pipeline.setssModel(sys_model)
+# KNet_model = KalmanNetNN()
+# KNet_model.Build(sys_model)
+# KNet_Pipeline.setModel(KNet_model)
+# KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
 
-   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+# KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
 
-   # KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-   # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
-   # KNet_Pipeline.save()
-   
-   ### KNet with model mismatch
-   # print("KNet with model mismatch")
-   # modelFolder = 'KNet' + '/'
-   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
-   # KNet_Pipeline.setssModel(sys_model_partialh)
-   # KNet_model = KalmanNetNN()
-   # KNet_model.Build(sys_model_partialh)
-   # KNet_Pipeline.setModel(KNet_model)
-   # KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
+# KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+# [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+# KNet_Pipeline.save()
 
-   # # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet_obsmis_rq1030_T2000.pt",map_location=dev)  
+### KNet with model mismatch
+# print("KNet with model mismatch")
+# sys_model_partialh = SystemModel(f, q[0], hInacc, r[0], T, T_test, m, n,"Lor")# arbitary q and r
+# sys_model_partialh.InitSequence(m1x_0, m2x_0)
+# modelFolder = 'KNet' + '/'
+# KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KNet")
+# KNet_Pipeline.setssModel(sys_model_partialh)
+# KNet_model = KalmanNetNN()
+# KNet_model.Build(sys_model_partialh)
+# KNet_Pipeline.setModel(KNet_model)
+# KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
 
-   # KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-   # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
-   # KNet_Pipeline.save()
+# # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet_obsmis_rq1030_T2000.pt",map_location=dev)  
 
-   # # Save trajectories
-   # # trajfolderName = 'KNet' + '/'
-   # # DataResultName = traj_resultName[rindex]
-   # # # EKF_sample = torch.reshape(EKF_out[0,:,:],[1,m,T_test])
-   # # # EKF_Partial_sample = torch.reshape(EKF_out_partial[0,:,:],[1,m,T_test])
-   # # # target_sample = torch.reshape(test_target[0,:,:],[1,m,T_test])
-   # # # input_sample = torch.reshape(test_input[0,:,:],[1,n,T_test])
-   # # # KNet_sample = torch.reshape(KNet_test[0,:,:],[1,m,T_test])
-   # # torch.save({
-   # #             'KNet': KNet_test,
-   # #             }, trajfolderName+DataResultName)
+# KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+# [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+# KNet_Pipeline.save()
 
-   # ## Save histogram
-   # EKFfolderName = 'KNet' + '/'
-   # torch.save({'MSE_EKF_linear_arr': MSE_EKF_linear_arr,
-   #             'MSE_EKF_dB_avg': MSE_EKF_dB_avg,
-   #             'MSE_EKF_linear_arr_partial': MSE_EKF_linear_arr_partial,
-   #             'MSE_EKF_dB_avg_partial': MSE_EKF_dB_avg_partial,
-   #             # 'MSE_EKF_linear_arr_partialoptr': MSE_EKF_linear_arr_partialoptr,
-   #             # 'MSE_EKF_dB_avg_partialoptr': MSE_EKF_dB_avg_partialoptr,
-   #             'KNet_MSE_test_linear_arr': KNet_MSE_test_linear_arr,
-   #             'KNet_MSE_test_dB_avg': KNet_MSE_test_dB_avg,
-   #             }, EKFfolderName+EKFResultName)
+# # Save trajectories
+# # trajfolderName = 'KNet' + '/'
+# # DataResultName = traj_resultName[rindex]
+# # # EKF_sample = torch.reshape(EKF_out[0,:,:],[1,m,T_test])
+# # # EKF_Partial_sample = torch.reshape(EKF_out_partial[0,:,:],[1,m,T_test])
+# # # target_sample = torch.reshape(test_target[0,:,:],[1,m,T_test])
+# # # input_sample = torch.reshape(test_input[0,:,:],[1,n,T_test])
+# # # KNet_sample = torch.reshape(KNet_test[0,:,:],[1,m,T_test])
+# # torch.save({
+# #             'KNet': KNet_test,
+# #             }, trajfolderName+DataResultName)
+
+# ## Save histogram
+# EKFfolderName = 'KNet' + '/'
+# torch.save({'MSE_EKF_linear_arr': MSE_EKF_linear_arr,
+#             'MSE_EKF_dB_avg': MSE_EKF_dB_avg,
+#             'MSE_EKF_linear_arr_partial': MSE_EKF_linear_arr_partial,
+#             'MSE_EKF_dB_avg_partial': MSE_EKF_dB_avg_partial,
+#             # 'MSE_EKF_linear_arr_partialoptr': MSE_EKF_linear_arr_partialoptr,
+#             # 'MSE_EKF_dB_avg_partialoptr': MSE_EKF_dB_avg_partialoptr,
+#             'KNet_MSE_test_linear_arr': KNet_MSE_test_linear_arr,
+#             'KNet_MSE_test_dB_avg': KNet_MSE_test_dB_avg,
+#             }, EKFfolderName+EKFResultName)
 
    
 
