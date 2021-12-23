@@ -131,11 +131,16 @@ for index in range(0,len(r2)):
    ### Least square estimation of H
    X = torch.squeeze(train_target[:,:,0]).to(dev,non_blocking = True)
    Y = torch.squeeze(train_input[:,:,0]).to(dev,non_blocking = True)
-   Y_1 = Y[:,0]
-   Y_2 = Y[:,1]
-   H_row1 = torch.mm(torch.mm(torch.inverse(torch.mm(X.T,X)),X.T),Y_1).to(dev,non_blocking = True)
-   H_row2 = torch.mm(torch.mm(torch.inverse(torch.mm(X.T,X)),X.T),Y_2).to(dev,non_blocking = True)
-   H_hat = torch.cat((H_row1,H_row2),0)
+   for t in range(1,T):
+      X_t = torch.squeeze(train_target[:,:,t])
+      Y_t = torch.squeeze(train_input[:,:,t])
+      X = torch.cat((X,X_t),0)
+      Y = torch.cat((Y,Y_t),0)
+   Y_1 = torch.unsqueeze(Y[:,0],1)
+   Y_2 = torch.unsqueeze(Y[:,1],1)
+   H_row1 = torch.matmul(torch.matmul(torch.inverse(torch.matmul(X.T,X)),X.T),Y_1).to(dev,non_blocking = True)
+   H_row2 = torch.matmul(torch.matmul(torch.inverse(torch.matmul(X.T,X)),X.T),Y_2).to(dev,non_blocking = True)
+   H_hat = torch.cat((H_row1.T,H_row2.T),0)
    print("Estimated Observation matrix H:", H_hat)
 
    # Estimated model

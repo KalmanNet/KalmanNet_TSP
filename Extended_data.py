@@ -136,7 +136,7 @@ def DataGen(SysModel_data, fileName, T, T_test,randomInit=False):
 
 def DataLoader(fileName):
 
-    [training_input, training_target, cv_input, cv_target, test_input, test_target] = torch.load(fileName)
+    [training_input, training_target, cv_input, cv_target, test_input, test_target] = torch.load(fileName, map_location=dev)
     return [training_input, training_target, cv_input, cv_target, test_input, test_target]
 
 def DataLoader_GPU(fileName):
