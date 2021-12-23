@@ -51,20 +51,20 @@ for index in range(0,len(r2)):
    # True model
    r = torch.sqrt(r2[index])
    q = torch.sqrt(q2[index])
-   sys_model = SystemModel(F, q, H, r, T, T_test)
+   sys_model = SystemModel(F, q, H_rotated, r, T, T_test)
    sys_model.InitSequence(m1_0, m2_0)
 
    # Mismatched model
-   sys_model_partialh = SystemModel(F, q, H_rotated, r, T, T_test)
+   sys_model_partialh = SystemModel(F, q, H, r, T, T_test)
    sys_model_partialh.InitSequence(m1_0, m2_0)
 
    ###################################
    ### Data Loader (Generate Data) ###
    ###################################
-   dataFolderName = 'Simulations/Linear_canonical/H=I' + '/'
+   dataFolderName = 'Simulations/Linear_canonical/H_rotated' + '/'
    dataFileName = ['2x2_rq-1010_T100.pt','2x2_rq020_T100.pt','2x2_rq1030_T100.pt','2x2_rq2040_T100.pt','2x2_rq3050_T100.pt']
-   # print("Start Data Gen")
-   # DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
+   print("Start Data Gen")
+   DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
    print("Data Load")
    [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName[index])
    print("trainset size:",train_target.size())
@@ -82,7 +82,7 @@ for index in range(0,len(r2)):
 
 
    DatafolderName = 'Filters/Linear' + '/'
-   DataResultName = 'KF_'+ dataFileName[index]
+   DataResultName = 'KF_HRotated'+ dataFileName[index]
    torch.save({
                'MSE_KF_linear_arr': MSE_KF_linear_arr,
                'MSE_KF_dB_avg': MSE_KF_dB_avg,
@@ -123,4 +123,33 @@ for index in range(0,len(r2)):
    [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
    KNet_Pipeline.save()
 
+
+   print("KNet with estimated H")
+   modelFolder = 'KNet' + '/'
+   KNet_Pipeline = Pipeline_KF(strTime, "KNet", "KNetEstH_"+ dataFileName[index])
+   print("True Observation matrix H:", H_rotated)
+   ### Least square estimation of H
+   X = torch.squeeze(train_target[:,:,0]).to(dev,non_blocking = True)
+   Y = torch.squeeze(train_input[:,:,0]).to(dev,non_blocking = True)
+   Y_1 = Y[:,0]
+   Y_2 = Y[:,1]
+   H_row1 = torch.mm(torch.mm(torch.inverse(torch.mm(X.T,X)),X.T),Y_1).to(dev,non_blocking = True)
+   H_row2 = torch.mm(torch.mm(torch.inverse(torch.mm(X.T,X)),X.T),Y_2).to(dev,non_blocking = True)
+   H_hat = torch.cat((H_row1,H_row2),0)
+   print("Estimated Observation matrix H:", H_hat)
+
+   # Estimated model
+   sys_model_esth = SystemModel(F, q, H_hat, r, T, T_test)
+   sys_model_esth.InitSequence(m1_0, m2_0)
+
+   KNet_Pipeline.setssModel(sys_model_esth)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model_esth)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=1E-3, weightDecay=1E-5)
+
+   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.save()
 
