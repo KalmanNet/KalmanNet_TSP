@@ -38,71 +38,89 @@ path_results = 'RTSNet/'
 ####################
 ### Design Model ###
 ####################
-r2 = torch.tensor([1.])
+r2 = torch.tensor([10,1.,0.1,1e-2,1e-3])
 vdB = -20 # ratio v=q2/r2
 v = 10**(vdB/10)
 q2 = torch.mul(v,r2)
-print("1/r2 [dB]: ", 10 * torch.log10(1/r2[0]))
-print("1/q2 [dB]: ", 10 * torch.log10(1/q2[0]))
 
-# True model
-r = torch.sqrt(r2)
-q = torch.sqrt(q2)
-sys_model = SystemModel(F, q, H, r, T, T_test)
-sys_model.InitSequence(m1_0, m2_0)
+for index in range(0,len(r2)):
 
-# Mismatched model
-sys_model_partialh = SystemModel(F, q, H_rotated, r, T, T_test)
-sys_model_partialh.InitSequence(m1_0, m2_0)
+   print("1/r2 [dB]: ", 10 * torch.log10(1/r2[index]))
+   print("1/q2 [dB]: ", 10 * torch.log10(1/q2[index]))
 
-###################################
-### Data Loader (Generate Data) ###
-###################################
-dataFolderName = 'Simulations/Linear_canonical' + '/'
-dataFileName = '2x2_rq020_T100.pt'
-print("Start Data Gen")
-DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
-print("Data Load")
-[train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName)
-print("trainset size:",train_target.size())
-print("cvset size:",cv_target.size())
-print("testset size:",test_target.size())
+   # True model
+   r = torch.sqrt(r2[index])
+   q = torch.sqrt(q2[index])
+   sys_model = SystemModel(F, q, H, r, T, T_test)
+   sys_model.InitSequence(m1_0, m2_0)
 
-##############################
-### Evaluate Kalman Filter ###
-##############################
-print("Evaluate Kalman Filter True")
-[MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
-print("Evaluate Kalman Filter Partial")
-[MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = KFTest(sys_model_partialh, test_input, test_target)
+   # Mismatched model
+   sys_model_partialh = SystemModel(F, q, H_rotated, r, T, T_test)
+   sys_model_partialh.InitSequence(m1_0, m2_0)
+
+   ###################################
+   ### Data Loader (Generate Data) ###
+   ###################################
+   dataFolderName = 'Simulations/Linear_canonical' + '/'
+   dataFileName = ['2x2_rq-1010_T100.pt','2x2_rq020_T100.pt','2x2_rq1030_T100.pt','2x2_rq2040_T100.pt','2x2_rq3050_T100.pt']
+   # print("Start Data Gen")
+   # DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
+   print("Data Load")
+   [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName[index])
+   print("trainset size:",train_target.size())
+   print("cvset size:",cv_target.size())
+   print("testset size:",test_target.size())
+
+   ##############################
+   ### Evaluate Kalman Filter ###
+   ##############################
+   print("Evaluate Kalman Filter True")
+   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(sys_model, test_input, test_target)
+   print("Evaluate Kalman Filter Partial")
+   [MSE_KF_linear_arr_partialh, MSE_KF_linear_avg_partialh, MSE_KF_dB_avg_partialh] = KFTest(sys_model_partialh, test_input, test_target)
 
 
 
-# DatafolderName = 'Data' + '/'
-# DataResultName = '10x10_Ttest1000' 
-# torch.save({
-#             'MSE_KF_linear_arr': MSE_KF_linear_arr,
-#             'MSE_KF_dB_avg': MSE_KF_dB_avg,
-#             'MSE_RTS_linear_arr': MSE_RTS_linear_arr,
-#             'MSE_RTS_dB_avg': MSE_RTS_dB_avg,
-#             }, DatafolderName+DataResultName)
+   DatafolderName = 'Filters/Linear' + '/'
+   DataResultName = 'KF_'+ dataFileName[index]
+   torch.save({
+               'MSE_KF_linear_arr': MSE_KF_linear_arr,
+               'MSE_KF_dB_avg': MSE_KF_dB_avg,
+               'MSE_KF_linear_arr_partialh': MSE_KF_linear_arr_partialh,
+               'MSE_KF_dB_avg_partialh': MSE_KF_dB_avg_partialh,
+               }, DatafolderName+DataResultName)
 
-##################
-###  KalmanNet ###
-##################
-print("Start KNet pipeline")
-modelFolder = 'KNet' + '/'
-KNet_Pipeline = Pipeline_KF(strTime, "KNet", "KalmanNet")
-KNet_Pipeline.setssModel(sys_model)
-KNet_model = KalmanNetNN()
-KNet_model.Build(sys_model)
-KNet_Pipeline.setModel(KNet_model)
-KNet_Pipeline.setTrainingParams(n_Epochs=200, n_Batch=10, learningRate=1e-3, weightDecay=1e-4)
+   ##################
+   ###  KalmanNet ###
+   ##################
+   print("Start KNet pipeline")
+   print("KNet with full model info")
+   modelFolder = 'KNet' + '/'
+   KNet_Pipeline = Pipeline_KF(strTime, "KNet", "KNet_"+ dataFileName[index])
+   KNet_Pipeline.setssModel(sys_model)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=1E-3, weightDecay=1E-5)
 
-# KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.save()
 
-KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-[KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
-KNet_Pipeline.save()
+   
+   print("KNet with partial model info")
+   modelFolder = 'KNet' + '/'
+   KNet_Pipeline = Pipeline_KF(strTime, "KNet", "KNetPartial_"+ dataFileName[index])
+   KNet_Pipeline.setssModel(sys_model_partialh)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model_partialh)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=30, learningRate=1E-3, weightDecay=1E-5)
+
+   # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
+   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.save()
 
 

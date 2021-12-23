@@ -95,6 +95,8 @@ for index in range(0, len(r)):
    #############################
    ### Prepare System Models ###
    #############################
+   sys_model = SystemModel(f, q[index], h, r[index], T, T_test, m, n,"Lor")
+   sys_model.InitSequence(m1x_0, m2x_0)
 
    sys_model_optq = SystemModel(f, qopt[index], h, r[index], T, T_test, m, n,"Lor")
    sys_model_optq.InitSequence(m1x_0, m2x_0)
@@ -112,7 +114,7 @@ for index in range(0, len(r)):
    ### Generate and load DT data ###
    #################################
    # print("Start Data Gen")
-   # DataGen(sys_model, DatafolderName + dataFileName[0], T, T_test,randomInit=False)
+   # DataGen(sys_model, DatafolderName + dataFileName[index], T, T_test,randomInit=False)
    print("Data Load")
    print(dataFileName[index])
    [train_input_long,train_target_long, cv_input, cv_target, test_input, test_target] =  torch.load(DatafolderName + dataFileName[index],map_location=dev)  
