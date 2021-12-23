@@ -64,7 +64,7 @@ for index in range(0,len(r2)):
    dataFolderName = 'Simulations/Linear_canonical/H=I' + '/'
    dataFileName = ['2x2_rq-1010_T100.pt','2x2_rq020_T100.pt','2x2_rq1030_T100.pt','2x2_rq2040_T100.pt','2x2_rq3050_T100.pt']
    # print("Start Data Gen")
-   # DataGen(sys_model, dataFolderName + dataFileName, T, T_test,randomInit=False)
+   # DataGen(sys_model, dataFolderName + dataFileName[index], T, T_test,randomInit=False)
    print("Data Load")
    [train_input, train_target, cv_input, cv_target, test_input, test_target] = DataLoader_GPU(dataFolderName + dataFileName[index])
    print("trainset size:",train_target.size())

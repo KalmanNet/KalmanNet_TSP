@@ -12,8 +12,8 @@ class Pipeline_EKF:
         self.Time = Time
         self.folderName = folderName + '/'
         self.modelName = modelName
-        self.modelFileName = self.folderName + "model_" + self.modelName + ".pt"
-        self.PipelineName = self.folderName + "pipeline_" + self.modelName + ".pt"
+        self.modelFileName = self.folderName + "model_" + self.modelName
+        self.PipelineName = self.folderName + "pipeline_" + self.modelName
 
     def save(self):
         torch.save(self, self.PipelineName)
