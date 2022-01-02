@@ -37,7 +37,7 @@ class Model(pyparticleest.models.nlg.NonlinearGaussianInitialGaussian):
             particles_g[k,:] = self.g(torch.tensor(particles[k,:]))
         return particles_g
 
-def PFTest(SysModel, test_input, test_target, n_part=100, init_cond=None):
+def PFTest(SysModel, test_input, test_target, n_part=100):
     
     N_T = test_target.size()[0]
 
@@ -45,21 +45,18 @@ def PFTest(SysModel, test_input, test_target, n_part=100, init_cond=None):
     loss_fn = nn.MSELoss(reduction='mean')
 
     # MSE [Linear]
-    MSE_PF_linear_arr = np.empty(N_T)
+    MSE_PF_linear_arr = torch.empty(N_T)
 
-    PF_out = np.empty((N_T, test_target.size()[1], SysModel.T_test))
+    PF_out = torch.empty([N_T, SysModel.m, SysModel.T_test])
 
     start = time.time()
 
     for j in range(N_T):
-        if init_cond is None:
-            model = Model(SysModel, test_target[j, :, 0])
-        else:
-            model = Model(SysModel, x_0=init_cond[j, :])
+        model = Model(SysModel, test_target[j, :, 0])
         y_in = test_input[j, :, :].T.numpy().squeeze()
         sim = simulator.Simulator(model, u=None, y=y_in)
         sim.simulate(n_part, 0)
-        PF_out[j, :, :] = sim.get_filtered_mean()[1:,].T
+        PF_out[j, :, :] = torch.from_numpy(sim.get_filtered_mean()[1:,].T).float()
 
 
     for j in range(N_T):
@@ -68,9 +65,16 @@ def PFTest(SysModel, test_input, test_target, n_part=100, init_cond=None):
     end = time.time()
     t = end - start
 
-    MSE_PF_linear_avg = np.mean(MSE_PF_linear_arr)
-    MSE_PF_dB_avg = 10 * np.log10(MSE_PF_linear_avg)
+    MSE_PF_linear_avg = torch.mean(MSE_PF_linear_arr)
+    MSE_PF_dB_avg = 10 * torch.log10(MSE_PF_linear_avg)
+    # Standard deviation
+    MSE_PF_dB_std = torch.std(MSE_PF_linear_arr, unbiased=True)
+    MSE_PF_dB_std = 10 * torch.log10(MSE_PF_dB_std)
 
-    return [MSE_PF_linear_arr, MSE_PF_linear_avg, MSE_PF_dB_avg, PF_out, t]
+    print("PF - MSE LOSS:", MSE_PF_dB_avg, "[dB]")
+    print("PF - MSE STD:", MSE_PF_dB_std, "[dB]")
+    # Print Run Time
+    print("Inference Time:", t)
+    return [MSE_PF_linear_arr, MSE_PF_linear_avg, MSE_PF_dB_avg, PF_out]
 
 

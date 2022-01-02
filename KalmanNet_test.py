@@ -72,5 +72,16 @@ def NNTest(SysModel, test_input, test_target, path_results, nclt=False, rnn=Fals
     # Average
     MSE_test_linear_avg = torch.mean(MSE_test_linear_arr)
     MSE_test_dB_avg = 10 * torch.log10(MSE_test_linear_avg)
+    # Standard deviation
+    MSE_test_dB_std = torch.std(MSE_test_linear_arr, unbiased=True)
+    MSE_test_dB_std = 10 * torch.log10(MSE_test_dB_std)
+
+    # Print MSE Cross Validation
+    str = "KNet - MSE Test:"
+    print(str, MSE_test_dB_avg, "[dB]")
+    str = "KNet - STD Test:"
+    print(str, MSE_test_dB_std, "[dB]")
+    # Print Run Time
+    print("Inference Time:", t)
 
     return [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KGain_array, x_out_array, t]
