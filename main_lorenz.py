@@ -83,7 +83,8 @@ q2optdB_partial = torch.tensor([18.2391,28.2391,38.2391,48,55])
 qopt_partial = torch.sqrt(10**(-q2optdB_partial/10))
 
 # traj_resultName = ['traj_lor_KNetFull_rq1030_T2000_NT100.pt']#,'partial_lor_r4.pt','partial_lor_r5.pt','partial_lor_r6.pt']
-dataFileName = ['data_lor_v20_rq020_T2000.pt','data_lor_v20_rq1030_T2000.pt','data_lor_v20_rq2040_T2000.pt','data_lor_v20_rq3050_T2000.pt','data_lor_v20_rq4060_T2000.pt']#,'data_lor_v20_r1e-2_T100.pt']
+dataFileName = ['data_lor_v20_rq020_T2000.pt','data_lor_v20_rq1030_T2000.pt','data_lor_v20_rq2040_T2000.pt','data_lor_v20_rq3050_T2000.pt','data_lor_v20_rq4060_T2000.pt']# for T=2000
+# dataFileName = ['data_lor_v20_rq020_T1000_NT100.pt','data_lor_v20_rq1030_T1000_NT100.pt','data_lor_v20_rq2040_T1000_NT100.pt','data_lor_v20_rq3050_T1000_NT100.pt']# for T=1000
 EKFResultName = ['EKF_rq020_T2000','EKF_rq1030_T2000','EKF_rq2040_T2000','EKF_rq3050_T2000','EKF_rq4060_T2000'] 
 UKFResultName = ['UKF_rq020_T2000','UKF_rq1030_T2000','UKF_rq2040_T2000','UKF_rq3050_T2000','UKF_rq4060_T2000'] 
 PFResultName = ['PF_rq020_T2000','PF_rq1030_T2000','PF_rq2040_T2000','PF_rq3050_T2000','PF_rq4060_T2000'] 
