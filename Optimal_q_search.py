@@ -12,7 +12,7 @@ from Pipeline_ERTS import Pipeline_ERTS as Pipeline
 from Pipeline_EKF import Pipeline_EKF
 
 from Extended_RTSNet_nn import RTSNetNN
-from Extended_KalmanNet_nn import KalmanNetNN
+from KalmanNet_nn import KalmanNetNN
 
 from datetime import datetime
 

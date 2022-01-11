@@ -4,11 +4,10 @@ import torch
 import torch.nn as nn
 import torch.nn.functional as func
 
-from filing_paths import path_model
-
-import sys
-sys.path.insert(1, path_model)
-from model import getJacobian
+# from filing_paths import path_model
+# import sys
+# sys.path.insert(1, path_model)
+# from model import getJacobian
 
 if torch.cuda.is_available():
     dev = torch.device("cuda:0")
@@ -27,6 +26,23 @@ class KalmanNetNN(torch.nn.Module):
     ###################
     def __init__(self):
         super().__init__()
+
+    ######################################
+    ### Initialize Kalman Gain Network ###
+    ######################################
+
+    def Build(self, SysModel, infoString = 'fullInfo'):
+
+        self.InitSystemDynamics.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n, infoString = "partialInfo")
+        self.InitSequence(SysModel.m1x_0, SysModel.T)
+
+        # # Number of neurons in the 1st hidden layer
+        # H1_KNet = (ssModel.m + ssModel.n) * (10) * 8
+
+        # # Number of neurons in the 2nd hidden layer
+        # H2_KNet = (ssModel.m * ssModel.n) * 1 * (4)
+
+        self.InitKGainNet(SysModel.prior_Q, SysModel.prior_Sigma, SysModel.prior_S)
 
     ######################################
     ### Initialize Kalman Gain Network ###
@@ -145,7 +161,7 @@ class KalmanNetNN(torch.nn.Module):
     ###########################
     ### Initialize Sequence ###
     ###########################
-    def InitSequence(self, M1_0, M2_0, T):
+    def InitSequence(self, M1_0, T):
         self.T = T
         self.x_out = torch.empty(self.m, T).to(dev, non_blocking=True)
 

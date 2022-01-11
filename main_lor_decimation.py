@@ -7,10 +7,6 @@ from Extended_data import DataGen,DataLoader,DataLoader_GPU, Decimate_and_pertur
 from Extended_data import N_E, N_CV, N_T
 from Pipeline_EKF import Pipeline_EKF
 
-from KalmanNet_build import NNBuild
-from KalmanNet_train import NNTrain
-from KalmanNet_test import NNTest
-
 from EKF_test import EKFTest
 from PF_test import PFTest
 from UKF_test import UKFTest
@@ -113,11 +109,18 @@ for rindex in range(0, len(r)):
    
    # KNet with model mismatch
    ## Build Neural Network
-   Model = NNBuild(sys_model)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model)
    ## Train Neural Network
-  #  [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = NNTrain(sys_model, Model, cv_input_long, cv_target_long, train_input, train_target, path_results, sequential_training)
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   KNet_Pipeline.setssModel(sys_model)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   KNet_Pipeline.NNTrain(train_input, train_target,cv_input_long, cv_target_long)
    ## Test Neural Network
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = NNTest(sys_model, test_input, test_target, path_results)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(test_input, test_target)
+   KNet_Pipeline.save()
+   
    # Save trajectories
   #  trajfolderName = 'KNet' + '/'
   #  DataResultName = traj_resultName[rindex]

@@ -2,6 +2,15 @@ import torch
 import torch.nn as nn
 import random
 from Plot import Plot
+import time
+
+if torch.cuda.is_available():
+    dev = torch.device("cuda:0")
+    torch.set_default_tensor_type("torch.cuda.FloatTensor")
+    print("using GPU!")
+else:
+    dev = torch.device("cpu")
+    print("using CPU!")
 
 
 class Pipeline_EKF:
@@ -21,7 +30,7 @@ class Pipeline_EKF:
         self.ssModel = ssModel
 
     def setModel(self, model):
-        self.model = model
+        self.model = model.to(dev, non_blocking=True)
 
     def setTrainingParams(self, n_Epochs, n_Batch, learningRate, weightDecay):
         self.N_Epochs = n_Epochs  # Number of Training Epochs
@@ -39,18 +48,20 @@ class Pipeline_EKF:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learningRate, weight_decay=self.weightDecay)
 
 
-    def NNTrain(self, n_Examples, train_input, train_target, n_CV, cv_input, cv_target):
+    def NNTrain(self, train_input, train_target, cv_input, cv_target, rnn=False):
+        cv_target = cv_target.to(dev, non_blocking=True)
+        train_target = train_target.to(dev, non_blocking=True)
 
-        self.N_E = n_Examples
-        self.N_CV = n_CV
+        self.N_E = train_input.size()[0]
+        self.N_CV = cv_input.size()[0]
 
-        MSE_cv_linear_batch = torch.empty([self.N_CV])
-        self.MSE_cv_linear_epoch = torch.empty([self.N_Epochs])
-        self.MSE_cv_dB_epoch = torch.empty([self.N_Epochs])
+        MSE_cv_linear_batch = torch.empty([self.N_CV]).to(dev, non_blocking=True)
+        self.MSE_cv_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_cv_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
-        MSE_train_linear_batch = torch.empty([self.N_B])
-        self.MSE_train_linear_epoch = torch.empty([self.N_Epochs])
-        self.MSE_train_dB_epoch = torch.empty([self.N_Epochs])
+        MSE_train_linear_batch = torch.empty([self.N_B]).to(dev, non_blocking=True)
+        self.MSE_train_linear_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
+        self.MSE_train_dB_epoch = torch.empty([self.N_Epochs]).to(dev, non_blocking=True)
 
         ##############
         ### Epochs ###
@@ -86,7 +97,11 @@ class Pipeline_EKF:
             if (self.MSE_cv_dB_epoch[ti] < self.MSE_cv_dB_opt):
                 self.MSE_cv_dB_opt = self.MSE_cv_dB_epoch[ti]
                 self.MSE_cv_idx_opt = ti
-                torch.save(self.model, self.modelFileName)
+                if(rnn):
+                    torch.save(self.model, 'rnn_'+self.modelFileName)
+                else:
+                     torch.save(self.model, self.modelFileName)
+               
 
             ###############################
             ### Training Sequence Batch ###
@@ -106,7 +121,7 @@ class Pipeline_EKF:
                 y_training = train_input[n_e, :, :]
                 self.model.InitSequence(self.ssModel.m1x_0, self.ssModel.T)
 
-                x_out_training = torch.empty(self.ssModel.m, self.ssModel.T)
+                x_out_training = torch.empty(self.ssModel.m, self.ssModel.T).to(dev, non_blocking=True)
                 for t in range(0, self.ssModel.T):
                     x_out_training[:, t] = self.model(y_training[:, t])
 
@@ -152,45 +167,60 @@ class Pipeline_EKF:
                 print("diff MSE Training :", d_train, "[dB]", "diff MSE Validation :", d_cv, "[dB]")
 
             print("Optimal idx:", self.MSE_cv_idx_opt, "Optimal :", self.MSE_cv_dB_opt, "[dB]")
+        
 
-    def NNTest(self, n_Test, test_input, test_target):
-
-        self.N_T = n_Test
+    def NNTest(self, test_input, test_target, rnn=False):
+        test_target = test_target.to(dev, non_blocking=True)
+        self.N_T = test_input.size()[0]
 
         self.MSE_test_linear_arr = torch.empty([self.N_T])
 
         # MSE LOSS Function
         loss_fn = nn.MSELoss(reduction='mean')
-
-        self.model = torch.load(self.modelFileName)
-
+        
+        if(rnn):
+             self.model = torch.load('rnn_'+self.modelFileName, map_location=dev)
+        else:
+            self.model = torch.load(self.modelFileName, map_location=dev)
+        
         self.model.eval()
 
         torch.no_grad()
         
         x_out_array = torch.empty(self.N_T,self.ssModel.m, self.ssModel.T_test)
-
+        start = time.time()
         for j in range(0, self.N_T):
 
             y_mdl_tst = test_input[j, :, :]
 
             self.model.InitSequence(self.ssModel.m1x_0, self.ssModel.T_test)
 
-            x_out_test = torch.empty(self.ssModel.m, self.ssModel.T_test)
+            x_out_test = torch.empty(self.ssModel.m, self.ssModel.T_test).to(dev, non_blocking=True)
 
             for t in range(0, self.ssModel.T_test):
                 x_out_test[:, t] = self.model(y_mdl_tst[:, t])
 
             self.MSE_test_linear_arr[j] = loss_fn(x_out_test, test_target[j, :, :]).item()
             x_out_array[j,:,:] = x_out_test
+        
+        end = time.time()
+        t = end - start
 
         # Average
         self.MSE_test_linear_avg = torch.mean(self.MSE_test_linear_arr)
         self.MSE_test_dB_avg = 10 * torch.log10(self.MSE_test_linear_avg)
+        # Standard deviation
+        self.MSE_test_dB_std = torch.std(self.MSE_test_linear_arr, unbiased=True)
+        self.MSE_test_dB_std = 10 * torch.log10(self.MSE_test_dB_std)
 
         # Print MSE Cross Validation
         str = self.modelName + "-" + "MSE Test:"
         print(str, self.MSE_test_dB_avg, "[dB]")
+        # Print std
+        str = self.modelName + "- STD Test:" 
+        print(str, self.MSE_test_dB_std, "[dB]")
+        # Print Run Time
+        print("Inference Time:", t)
 
         return [self.MSE_test_linear_arr, self.MSE_test_linear_avg, self.MSE_test_dB_avg, x_out_array]
 

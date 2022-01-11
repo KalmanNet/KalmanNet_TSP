@@ -7,13 +7,9 @@ from Extended_data import DataGen,DataLoader,DataLoader_GPU, Decimate_and_pertur
 from Extended_data import N_E, N_CV, N_T
 from Pipeline_EKF import Pipeline_EKF
 from PF_test import PFTest
-from Extended_KalmanNet_nn import KalmanNetNN
+from KalmanNet_nn import KalmanNetNN
 
 from datetime import datetime
-
-from KalmanNet_build import NNBuild
-from KalmanNet_train import NNTrain
-from KalmanNet_test import NNTest
 
 from Plot import Plot_extended as Plot
 
@@ -138,20 +134,24 @@ for rindex in range(0, len(qopt)):
 
    # KNet_Pipeline.model = torch.load(modelFolder+"model_KNet.pt")
 
-   KNet_Pipeline.NNTrain(N_E, train_input, train_target, N_CV, cv_input, cv_target)
-   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(N_T, test_input, test_target)
+   KNet_Pipeline.NNTrain(train_input, train_target, cv_input, cv_target)
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(test_input, test_target)
    KNet_Pipeline.save()
    
    # KNet with model mismatch
    ## Build Neural Network
-   Model = NNBuild(sys_model_partialf)
+   KNet_model = KalmanNetNN()
+   KNet_model.Build(sys_model_partialf)
    # Model = torch.load('KNet/model_KNetNew_DT_procmis_r30q50_T2000.pt',map_location=cuda0)
    ## Train Neural Network
-   [MSE_cv_linear_epoch, MSE_cv_dB_epoch, MSE_train_linear_epoch, MSE_train_dB_epoch] = NNTrain(sys_model_partialf, Model, cv_input, cv_target, train_input, train_target, path_results, sequential_training)
+   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   KNet_Pipeline.setssModel(sys_model_partialf)
+   KNet_Pipeline.setModel(KNet_model)
+   KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   KNet_Pipeline.NNTrain(train_input, train_target, cv_input, cv_target)
    ## Test Neural Network
-   [MSE_test_linear_arr, MSE_test_linear_avg, MSE_test_dB_avg, KNet_KG_array, knet_out,RunTime] = NNTest(sys_model_partialf, test_input, test_target, path_results)
-   # Print MSE Cross Validation
-   print("MSE Test:", MSE_test_dB_avg, "[dB]")
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(test_input, test_target)
+   KNet_Pipeline.save()
 
    # # Save trajectories
    # # trajfolderName = 'KNet' + '/'
