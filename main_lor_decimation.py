@@ -11,6 +11,7 @@ from EKF_test import EKFTest
 from PF_test import PFTest
 from UKF_test import UKFTest
 from KalmanNet_nn import KalmanNetNN
+from Vanilla_rnn import Vanilla_RNN
 
 from datetime import datetime
 
@@ -45,7 +46,7 @@ print("Current Time =", strTime)
 ###  Compare EKF, RTS and RTSNet   ###
 ######################################
 offset = 0
-sequential_training = False
+split = False
 path_results = 'KNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data/'
 data_gen = 'data_gen.pt'
@@ -85,10 +86,10 @@ for rindex in range(0, len(r)):
    print("Data Gen")
    [test_target, test_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_T, h, r[rindex], offset)
    print("testset size:",test_target.size())
-   [train_target_long, train_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
+   [train_target, train_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
    [cv_target_long, cv_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
-    
-   [train_target, train_input] = Short_Traj_Split(train_target_long, train_input_long, T)
+   if split: 
+      [train_target, train_input] = Short_Traj_Split(train_target, train_input, T)
    print("trainset size:",train_target.size())
    print("cvset size:",cv_target_long.size())
    
@@ -111,15 +112,31 @@ for rindex in range(0, len(r)):
    ## Build Neural Network
    KNet_model = KalmanNetNN()
    KNet_model.Build(sys_model)
+   print("Number of trainable parameters for KNet:",sum(p.numel() for p in KNet_model.parameters() if p.requires_grad))
+   # ## Train Neural Network
+   # KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
+   # KNet_Pipeline.setssModel(sys_model)
+   # KNet_Pipeline.setModel(KNet_model)
+   # KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   # KNet_Pipeline.NNTrain(train_input, train_target,cv_input_long, cv_target_long)
+   # ## Test Neural Network
+   # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(test_input, test_target)
+   # KNet_Pipeline.save()
+
+   # Vanilla RNN with model mismatch
+   ## Build RNN
+   RNN_model = Vanilla_RNN()
+   RNN_model.Build(sys_model)
+   print("Number of trainable parameters for RNN:",sum(p.numel() for p in RNN_model.parameters() if p.requires_grad))
    ## Train Neural Network
-   KNet_Pipeline = Pipeline_EKF(strTime, "KNet", "KalmanNet")
-   KNet_Pipeline.setssModel(sys_model)
-   KNet_Pipeline.setModel(KNet_model)
-   KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
-   KNet_Pipeline.NNTrain(train_input, train_target,cv_input_long, cv_target_long)
+   RNN_Pipeline = Pipeline_EKF(strTime, "KNet", "VanillaRNN")
+   RNN_Pipeline.setssModel(sys_model)
+   RNN_Pipeline.setModel(RNN_model)
+   RNN_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   RNN_Pipeline.NNTrain(train_input, train_target,cv_input_long, cv_target_long)
    ## Test Neural Network
-   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(test_input, test_target)
-   KNet_Pipeline.save()
+   [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = RNN_Pipeline.NNTest(test_input, test_target)
+   RNN_Pipeline.save()
    
    # Save trajectories
   #  trajfolderName = 'KNet' + '/'

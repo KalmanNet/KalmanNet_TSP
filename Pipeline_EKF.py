@@ -48,7 +48,7 @@ class Pipeline_EKF:
         self.optimizer = torch.optim.Adam(self.model.parameters(), lr=self.learningRate, weight_decay=self.weightDecay)
 
 
-    def NNTrain(self, train_input, train_target, cv_input, cv_target, rnn=False):
+    def NNTrain(self, train_input, train_target, cv_input, cv_target):
         cv_target = cv_target.to(dev, non_blocking=True)
         train_target = train_target.to(dev, non_blocking=True)
 
@@ -96,11 +96,8 @@ class Pipeline_EKF:
 
             if (self.MSE_cv_dB_epoch[ti] < self.MSE_cv_dB_opt):
                 self.MSE_cv_dB_opt = self.MSE_cv_dB_epoch[ti]
-                self.MSE_cv_idx_opt = ti
-                if(rnn):
-                    torch.save(self.model, 'rnn_'+self.modelFileName)
-                else:
-                     torch.save(self.model, self.modelFileName)
+                self.MSE_cv_idx_opt = ti                
+                torch.save(self.model, self.modelFileName)
                
 
             ###############################
@@ -169,7 +166,7 @@ class Pipeline_EKF:
             print("Optimal idx:", self.MSE_cv_idx_opt, "Optimal :", self.MSE_cv_dB_opt, "[dB]")
         
 
-    def NNTest(self, test_input, test_target, rnn=False):
+    def NNTest(self, test_input, test_target):
         test_target = test_target.to(dev, non_blocking=True)
         self.N_T = test_input.size()[0]
 
@@ -177,11 +174,8 @@ class Pipeline_EKF:
 
         # MSE LOSS Function
         loss_fn = nn.MSELoss(reduction='mean')
-        
-        if(rnn):
-             self.model = torch.load('rnn_'+self.modelFileName, map_location=dev)
-        else:
-            self.model = torch.load(self.modelFileName, map_location=dev)
+             
+        self.model = torch.load(self.modelFileName, map_location=dev)
         
         self.model.eval()
 

@@ -15,12 +15,12 @@ else:
 #######################
 
 # Number of Training Examples
-N_E = 3000
+N_E = 300
 
 # Number of Cross Validation Examples
 N_CV = 10
 
-N_T = 1000
+N_T = 100
 
 # Sequence Length
 # T = 20

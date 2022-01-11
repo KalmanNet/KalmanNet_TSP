@@ -17,7 +17,6 @@ else:
 
 in_mult = 5
 out_mult = 40
-nGRU = 4
 
 class KalmanNetNN(torch.nn.Module):
 
@@ -33,7 +32,7 @@ class KalmanNetNN(torch.nn.Module):
 
     def Build(self, SysModel, infoString = 'fullInfo'):
 
-        self.InitSystemDynamics.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n, infoString = "partialInfo")
+        self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n, infoString = "partialInfo")
         self.InitSequence(SysModel.m1x_0, SysModel.T)
 
         # # Number of neurons in the 1st hidden layer
