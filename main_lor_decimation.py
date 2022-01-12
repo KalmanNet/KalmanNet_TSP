@@ -46,7 +46,7 @@ print("Current Time =", strTime)
 ###  Compare EKF, RTS and RTSNet   ###
 ######################################
 offset = 0
-split = False
+split = True
 path_results = 'KNet/'
 DatafolderName = 'Simulations/Lorenz_Atractor/data/'
 data_gen = 'data_gen.pt'
@@ -87,11 +87,12 @@ for rindex in range(0, len(r)):
    [test_target, test_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_T, h, r[rindex], offset)
    print("testset size:",test_target.size())
    [train_target, train_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_E, h, r[rindex], offset)
-   [cv_target_long, cv_input_long] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
+   [cv_target, cv_input] = Decimate_and_perturbate_Data(true_sequence, delta_t_gen, delta_t, N_CV, h, r[rindex], offset)
    if split: 
       [train_target, train_input] = Short_Traj_Split(train_target, train_input, T)
+      [cv_target, cv_input] = Short_Traj_Split(cv_target, cv_input, T)
    print("trainset size:",train_target.size())
-   print("cvset size:",cv_target_long.size())
+   print("cvset size:",cv_target.size())
    
    # EKF
   #  print("Start EKF test")
@@ -118,7 +119,7 @@ for rindex in range(0, len(r)):
    # KNet_Pipeline.setssModel(sys_model)
    # KNet_Pipeline.setModel(KNet_model)
    # KNet_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
-   # KNet_Pipeline.NNTrain(train_input, train_target,cv_input_long, cv_target_long)
+   # KNet_Pipeline.NNTrain(train_input, train_target,cv_input, cv_target)
    # ## Test Neural Network
    # [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = KNet_Pipeline.NNTest(test_input, test_target)
    # KNet_Pipeline.save()
@@ -133,7 +134,7 @@ for rindex in range(0, len(r)):
    RNN_Pipeline.setssModel(sys_model)
    RNN_Pipeline.setModel(RNN_model)
    RNN_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
-   RNN_Pipeline.NNTrain(train_input, train_target,cv_input_long, cv_target_long)
+   RNN_Pipeline.NNTrain(train_input, train_target,cv_input, cv_target)
    ## Test Neural Network
    [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = RNN_Pipeline.NNTest(test_input, test_target)
    RNN_Pipeline.save()
