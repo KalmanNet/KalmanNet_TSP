@@ -127,13 +127,13 @@ for rindex in range(0, len(r)):
    # Vanilla RNN with model mismatch
    ## Build RNN
    RNN_model = Vanilla_RNN()
-   RNN_model.Build(sys_model)
+   RNN_model.Build(sys_model, fully_agnostic = False)
    print("Number of trainable parameters for RNN:",sum(p.numel() for p in RNN_model.parameters() if p.requires_grad))
    ## Train Neural Network
    RNN_Pipeline = Pipeline_EKF(strTime, "KNet", "VanillaRNN")
    RNN_Pipeline.setssModel(sys_model)
    RNN_Pipeline.setModel(RNN_model)
-   RNN_Pipeline.setTrainingParams(n_Epochs=100, n_Batch=10, learningRate=1e-3, weightDecay=1e-6)
+   RNN_Pipeline.setTrainingParams(n_Epochs=500, n_Batch=10, learningRate=1e-2, weightDecay=1e-6)
    RNN_Pipeline.NNTrain(train_input, train_target,cv_input, cv_target)
    ## Test Neural Network
    [KNet_MSE_test_linear_arr, KNet_MSE_test_linear_avg, KNet_MSE_test_dB_avg, KNet_test] = RNN_Pipeline.NNTest(test_input, test_target)

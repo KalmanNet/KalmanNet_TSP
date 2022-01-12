@@ -26,9 +26,15 @@ class Vanilla_RNN(torch.nn.Module):
     ### Initialize Kalman Gain Network ###
     ######################################
 
-    def Build(self, SysModel):
+    def Build(self, SysModel, fully_agnostic = True):
+        self.fully_agnostic = fully_agnostic
+
+        # Set State Evolution Function
+        self.f = SysModel.f
         self.m = SysModel.m
 
+        # Set Observation Function
+        self.h = SysModel.h
         self.n = SysModel.n
 
         self.InitSequence(SysModel.m1x_0, SysModel.T)
@@ -73,6 +79,13 @@ class Vanilla_RNN(torch.nn.Module):
                 nn.ReLU())
         
 
+    ######################
+    ### Compute Priors ###
+    ######################
+    def step_prior(self):
+        # Predict the 1-st moment of x
+        self.m1x_prior = self.f(self.xhat_previous)
+
 
     ###########################
     ### Initialize Sequence ###
@@ -96,11 +109,24 @@ class Vanilla_RNN(torch.nn.Module):
     ########################
     def RNN_step(self, y):
 
-        self.step_est(y)
+        if self.fully_agnostic:
+            self.step_est(y)
 
-        self.xhat_previous = self.xhat
+            self.xhat_previous = self.xhat
 
-        return torch.squeeze(self.xhat)
+            return torch.squeeze(self.xhat)
+        else:
+            # Compute Priors
+            self.step_prior()
+
+            self.step_est(y)
+
+            self.xhat = self.m1x_prior + self.xhat
+
+            self.xhat_previous = self.xhat
+
+            return torch.squeeze(self.xhat)
+
 
     ########################
     ### Kalman Gain Step ###
