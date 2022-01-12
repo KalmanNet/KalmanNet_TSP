@@ -10,8 +10,8 @@ n = 2
 m1x_0 = torch.ones(m, 1) * 0.1
 m2x_0 = torch.zeros(m,m)
 
-T = 10
-T_test = 10
+T = 100
+T_test = 100
 #######################
 ### True Parameters ###
 #######################

@@ -30,7 +30,7 @@ class KalmanNetNN(torch.nn.Module):
     ### Initialize Kalman Gain Network ###
     ######################################
 
-    def Build(self, SysModel, infoString = 'fullInfo'):
+    def Build(self, SysModel):
 
         self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n, infoString = "partialInfo")
         self.InitSequence(SysModel.m1x_0, SysModel.T)
