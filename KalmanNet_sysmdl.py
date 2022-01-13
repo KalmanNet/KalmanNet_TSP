@@ -44,7 +44,7 @@ class SystemModel:
             self.prior_Q = prior_Q
 
         if prior_Sigma is None:
-            self.prior_Sigma = torch.zeros((self.m, self.m))
+            self.prior_Sigma = torch.eye(self.m)
         else:
             self.prior_Sigma = prior_Sigma
 

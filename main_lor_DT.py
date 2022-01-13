@@ -72,7 +72,7 @@ dataFileName = ['data_lor_v20_rq3050_T20.pt']#,'data_lor_v20_r1e-2_T100.pt','dat
 #Generate and load data DT case
 Q_true = (q[0]**2) * torch.eye(m)
 R_true = (r[0]**2) * torch.eye(n)
-sys_model = SystemModel(f, Q_true, h, R_true, T, T_test, m, n,"Lor")
+sys_model = SystemModel(f, Q_true, h, R_true, T, T_test)
 sys_model.InitSequence(m1x_0, m2x_0)
 print("Start Data Gen")
 DataGen(sys_model, DatafolderName + dataFileName[0], T, T_test)  

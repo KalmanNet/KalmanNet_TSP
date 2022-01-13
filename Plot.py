@@ -600,11 +600,11 @@ class Plot_extended(Plot_RTS):
                 elif(title == "RTSNet" or title =="KalmanNet"):
                     c = 'g'
                 else:
-                    c = 'm'
+                    c = 'grey'
                     # y_al = 0.68
 
                 ax.set_axis_off()
-                ax.set_title(title, y=y_al, fontdict={'fontsize': 15,'fontweight' : 20,'verticalalignment': 'baseline'})
+                # ax.set_title(title, y=y_al, fontdict={'fontsize': 15,'fontweight' : 20,'verticalalignment': 'baseline'})
                 ax.plot(inputs_numpy[0,0,:], inputs_numpy[0,1,:], inputs_numpy[0,2,:], c, linewidth=0.5)
 
                 ## Plot display 

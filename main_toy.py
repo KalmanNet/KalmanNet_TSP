@@ -60,11 +60,11 @@ for index in range(0,len(r2)):
    # True model
    Q_true = (q2[index]) * torch.eye(m)
    R_true = (r2[index]) * torch.eye(n)
-   sys_model = SystemModel(f, Q_true, h, R_true, T, T_test, m, n,"Toy")
+   sys_model = SystemModel(f, Q_true, h, R_true, T, T_test)
    sys_model.InitSequence(m1x_0, m2x_0)
 
    # Mismatched model
-   sys_model_partial = SystemModel(fInacc, Q_true, h, R_true, T, T_test, m, n,"Toy")
+   sys_model_partial = SystemModel(fInacc, Q_true, h, R_true, T, T_test)
    sys_model_partial.InitSequence(m1x_0, m2x_0)
 
    ###################################
