@@ -112,9 +112,9 @@ Since the file arrangement is very simular with the main branch, here we only br
 
 This folder stores the simulation results in our paper.
 
-* KalmanNet_build.py & KalmanNet_train.py & KalmanNet_test.py
+* KalmanNet_nn.py
 
-These files defines the building, training and testing of KalmanNet architecture #2.
+This file specifies KalmanNet architecture #2.
 
 
 
