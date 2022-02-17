@@ -39,7 +39,7 @@ strToday = today.strftime("%m.%d.%y")
 strNow = now.strftime("%H:%M:%S")
 strTime = strToday + "_" + strNow
 print("Current Time =", strTime)
-path_results = 'RTSNet/'
+path_results = 'KNet/'
 
 
 r2 = torch.tensor([16, 4, 1, 0.01, 1e-4])
@@ -114,8 +114,6 @@ for index in range(0,len(r2)):
    # torch.save({
    #             'MSE_KF_linear_arr': MSE_KF_linear_arr,
    #             'MSE_KF_dB_avg': MSE_KF_dB_avg,
-   #             'MSE_RTS_linear_arr': MSE_RTS_linear_arr,
-   #             'MSE_RTS_dB_avg': MSE_RTS_dB_avg,
    #             }, DatafolderName+DataResultName)
 
    ##################

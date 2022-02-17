@@ -40,9 +40,9 @@ strNow = now.strftime("%H:%M:%S")
 strTime = strToday + "_" + strNow
 print("Current Time =", strTime)
 
-######################################
-###  Compare EKF, RTS and RTSNet   ###
-######################################
+###################################
+###  Compare EKF, PF and KNet   ###
+###################################
 offset = 0
 sequential_training = False
 path_results = 'KNet/'
