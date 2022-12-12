@@ -6,14 +6,6 @@ import sys
 sys.path.insert(1, path_model)
 from parameters import delta_t, delta_t_gen, variance
 
-
-if torch.cuda.is_available():
-    cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-else:
-   cuda0 = torch.device("cpu")
-   print("Running on the CPU")
-
 class SystemModel:
 
     def __init__(self, f, q, h, r, T, T_test, m, n, modelname):
@@ -58,8 +50,8 @@ class SystemModel:
     #####################
     def InitSequence(self, m1x_0, m2x_0):
 
-        self.m1x_0 = torch.squeeze(m1x_0).to(cuda0)
-        self.m2x_0 = torch.squeeze(m2x_0).to(cuda0)
+        self.m1x_0 = torch.squeeze(m1x_0)
+        self.m2x_0 = torch.squeeze(m2x_0)
 
 
     #########################

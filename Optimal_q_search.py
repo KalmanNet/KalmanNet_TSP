@@ -1,4 +1,3 @@
-from Simulations.Lorenz_Atractor.model import fRotate
 import torch
 torch.pi = torch.acos(torch.zeros(1)).item() * 2 # which is 3.1415927410125732
 import random

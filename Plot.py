@@ -9,13 +9,6 @@ from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 from scipy.signal import find_peaks
 from mpl_toolkits.mplot3d import Axes3D
 
-if torch.cuda.is_available():
-    cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-else:
-   cpu0 = torch.device("cpu")
-   print("Running on the CPU")
-
 # Legend
 Klegend = ["KNet - Train", "KNet - Validation", "KNet - Test", "Kalman Filter"]
 RTSlegend = ["RTSNet - Train", "RTSNet - Validation", "RTSNet - Test", "RTS Smoother","Kalman Filter"]

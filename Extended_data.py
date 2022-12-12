@@ -3,13 +3,6 @@ import math
 import os
 os.environ['KMP_DUPLICATE_LIB_OK']='True'
 
-if torch.cuda.is_available():
-   dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
-   torch.set_default_tensor_type('torch.cuda.FloatTensor')
-else:
-   dev = torch.device("cpu")
-   print("Running on the CPU")
-
 #######################
 ### Size of DataSet ###
 #######################
@@ -58,9 +51,9 @@ m = 2
 n = 2
 F = F10[0:m, 0:m]
 H = torch.eye(2)
-m1_0 = torch.tensor([[0.0], [0.0]]).to(dev)
+m1_0 = torch.tensor([[0.0], [0.0]])
 # m1x_0_design = torch.tensor([[10.0], [-10.0]])
-m2_0 = 0 * 0 * torch.eye(m).to(dev)
+m2_0 = 0 * 0 * torch.eye(m)
 
 
 #############
@@ -70,9 +63,9 @@ m2_0 = 0 * 0 * torch.eye(m).to(dev)
 # n = 5
 # F = F10[0:m, 0:m]
 # H = H10[0:n, 10-m:10]
-# m1_0 = torch.zeros(m, 1).to(dev)
-# # m1x_0_design = torch.tensor([[1.0], [-1.0], [2.0], [-2.0], [0.0]]).to(dev)
-# m2_0 = 0 * 0 * torch.eye(m).to(dev)
+# m1_0 = torch.zeros(m, 1)
+# # m1x_0_design = torch.tensor([[1.0], [-1.0], [2.0], [-2.0], [0.0]])
+# m2_0 = 0 * 0 * torch.eye(m)
 
 ##############
 ## 10 x 10 ###
@@ -81,17 +74,17 @@ m2_0 = 0 * 0 * torch.eye(m).to(dev)
 # n = 10
 # F = F10[0:m, 0:m]
 # H = H10
-# m1_0 = torch.zeros(m, 1).to(dev)
+# m1_0 = torch.zeros(m, 1)
 # # m1x_0_design = torch.tensor([[10.0], [-10.0]])
-# m2_0 = 0 * 0 * torch.eye(m).to(dev)
+# m2_0 = 0 * 0 * torch.eye(m)
 
 # Inaccurate model knowledge based on matrix rotation
 alpha_degree = 10
-rotate_alpha = torch.tensor([alpha_degree/180*torch.pi]).to(dev)
+rotate_alpha = torch.tensor([alpha_degree/180*torch.pi])
 cos_alpha = torch.cos(rotate_alpha)
 sin_alpha = torch.sin(rotate_alpha)
 rotate_matrix = torch.tensor([[cos_alpha, -sin_alpha],
-                              [sin_alpha, cos_alpha]]).to(dev)
+                              [sin_alpha, cos_alpha]])
 # print(rotate_matrix)
 F_rotated = torch.mm(F,rotate_matrix) #inaccurate process model
 H_rotated = torch.mm(H,rotate_matrix) #inaccurate observation model
@@ -136,17 +129,17 @@ def DataGen(SysModel_data, fileName, T, T_test,randomInit=False):
 
 def DataLoader(fileName):
 
-    [training_input, training_target, cv_input, cv_target, test_input, test_target] = torch.load(fileName, map_location=dev)
+    [training_input, training_target, cv_input, cv_target, test_input, test_target] = torch.load(fileName, map_location=torch.device("cpu"))
     return [training_input, training_target, cv_input, cv_target, test_input, test_target]
 
 def DataLoader_GPU(fileName):
     [training_input, training_target, cv_input, cv_target, test_input, test_target] = torch.utils.data.DataLoader(torch.load(fileName),pin_memory = False)
-    training_input = training_input.squeeze().to(dev)
-    training_target = training_target.squeeze().to(dev)
-    cv_input = cv_input.squeeze().to(dev)
-    cv_target =cv_target.squeeze().to(dev)
-    test_input = test_input.squeeze().to(dev)
-    test_target = test_target.squeeze().to(dev)
+    training_input = training_input.squeeze().to(torch.device("cuda:0"))
+    training_target = training_target.squeeze().to(torch.device("cuda:0"))
+    cv_input = cv_input.squeeze().to(torch.device("cuda:0"))
+    cv_target =cv_target.squeeze().to(torch.device("cuda:0"))
+    test_input = test_input.squeeze().to(torch.device("cuda:0"))
+    test_target = test_target.squeeze().to(torch.device("cuda:0"))
     return [training_input, training_target, cv_input, cv_target, test_input, test_target]
 
 def DecimateData(all_tensors, t_gen,t_mod, offset=0):

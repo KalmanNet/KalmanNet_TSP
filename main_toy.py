@@ -19,7 +19,8 @@ sys.path.insert(1, path_model)
 from parameters import T, T_test, m1x_0, m2x_0, m, n
 from model import f, h, fInacc
 
-if torch.cuda.is_available():
+PFandUKF_test = True # because filterpy and pyparticleest are not compatible with GPU
+if torch.cuda.is_available() and not PFandUKF_test:
    dev = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
    torch.set_default_tensor_type('torch.cuda.FloatTensor')
    print("Running on the GPU")
