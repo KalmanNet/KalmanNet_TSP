@@ -26,6 +26,7 @@ if torch.cuda.is_available() and not PFandUKF_test:
    print("Running on the GPU")
 else:
    dev = torch.device("cpu")
+   torch.set_default_tensor_type('torch.FloatTensor')
    print("Running on the CPU")
 
    
