@@ -1,0 +1,8 @@
+autograd==1.3
+filterpy==1.4.5
+matplotlib==3.3.4
+numpy==1.20.1
+pyParticleEst==1.1.4
+scipy==1.8.1
+seaborn==0.11.1
+torch==1.10.1
