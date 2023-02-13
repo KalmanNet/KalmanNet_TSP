@@ -1,5 +1,9 @@
 # KalmanNet
 
+## Feb.13, 2023 Update: branch "batched"
+
+Support a batch of sequences being processed simultaneously, leading to dramatic efficiency improvement.
+
 ## Link to paper
 
 [KalmanNet: Neural Network Aided Kalman Filtering for Partially Known Dynamics](https://arxiv.org/abs/2107.10043)
