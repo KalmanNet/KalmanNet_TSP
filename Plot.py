@@ -3,28 +3,22 @@ import matplotlib as mpl
 mpl.rcParams['agg.path.chunksize'] = 1E4
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+from mpl_toolkits.mplot3d import Axes3D
 import seaborn as sns
 import numpy as np
 from mpl_toolkits.axes_grid1.inset_locator import zoomed_inset_axes, mark_inset
 from scipy.signal import find_peaks
-from mpl_toolkits.mplot3d import Axes3D
-
-if torch.cuda.is_available():
-    cuda0 = torch.device("cuda:0")  # you can continue going on here, like cuda:1 cuda:2....etc.
-    torch.set_default_tensor_type('torch.cuda.FloatTensor')
-else:
-   cpu0 = torch.device("cpu")
-   print("Running on the CPU")
 
 # Legend
-Klegend = ["KNet - Train", "KNet - Validation", "KNet - Test", "Kalman Filter"]
+Klegend = ["Unsupervised KalmanNet - Train", "Unsupervised KalmanNet - Validation", "Unsupervised KalmanNet - Test", "Kalman Filter"]
 RTSlegend = ["RTSNet - Train", "RTSNet - Validation", "RTSNet - Test", "RTS Smoother","Kalman Filter"]
 ERTSlegend = ["RTSNet - Train","RTSNet - Validation", "RTSNet - Test", "RTS","EKF"]
+error_evol = ["KNet Empirical Error","KNet Covariance Trace","KF Empirical Error","KF Covariance Trace","KNet Error Deviation","EKF Error Deviation"]
 # Color
-KColor = ['-ro', 'k-', 'b-','g-']
+KColor = ['-ro','darkorange','k-', 'b-','g-']
 RTSColor = ['red','darkorange','g-', 'b-']
 
-class Plot:
+class Plot_KF:
     
     def __init__(self, folderName, modelName):
         self.folderName = folderName
@@ -59,29 +53,16 @@ class Plot:
         # KF
         y_plt4 = MSE_KF_dB_avg * torch.ones(N_Epochs_plt)
         plt.plot(x_plt, y_plt4, KColor[3], label=Klegend[3])
-
+        
+        plt.xticks(fontsize= fontSize)
+        plt.yticks(fontsize= fontSize)
         plt.legend(fontsize=fontSize)
-        plt.xlabel('Number of Training Epochs', fontsize=fontSize)
+        plt.xlabel('Number of Training Iterations', fontsize=fontSize)
         plt.ylabel('MSE Loss Value [dB]', fontsize=fontSize)
-        plt.title(self.modelName + ":" + "MSE Loss [dB] - per Epoch", fontsize=fontSize)
+        plt.grid(True)
+        # plt.title(self.modelName + ":" + "MSE Loss [dB] - per Epoch", fontsize=fontSize)
         plt.savefig(fileName)
 
-
-    def NNPlot_Hist(self, MSE_KF_data_linear_arr, MSE_KN_linear_arr):
-
-        fileName = self.folderName + 'plt_hist_dB'
-
-        ####################
-        ### dB Histogram ###
-        ####################
-        plt.figure(figsize=(25, 10))
-        sns.distplot(10 * torch.log10(MSE_KN_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3}, color='g', label = self.modelName)
-        #sns.distplot(10 * torch.log10(MSE_KF_design_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3}, color= 'b', label = 'Kalman Filter - design')
-        sns.distplot(10 * torch.log10(MSE_KF_data_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3}, color= 'r', label = 'Kalman Filter')
-
-        plt.title("Histogram [dB]",fontsize=32)
-        plt.legend(fontsize=32)
-        plt.savefig(fileName)
 
     def KFPlot(res_grid):
 
@@ -199,34 +180,7 @@ class Plot:
 
         print('End')
 
-
-        # KF_design_MSE_mean_dB = 10 * torch.log10(torch.mean(MSE_KF_design_linear_arr))
-        # KF_design_MSE_median_dB = 10 * torch.log10(torch.median(MSE_KF_design_linear_arr))
-        # KF_design_MSE_std_dB = 10 * torch.log10(torch.std(MSE_KF_design_linear_arr))
-        # print("kalman Filter - Design:",
-        #       "MSE - mean", KF_design_MSE_mean_dB, "[dB]",
-        #       "MSE - median", KF_design_MSE_median_dB, "[dB]",
-        #       "MSE - std", KF_design_MSE_std_dB, "[dB]")
-        
-        # KF_data_MSE_mean_dB = 10 * torch.log10(torch.mean(MSE_KF_data_linear_arr))
-        # KF_data_MSE_median_dB = 10 * torch.log10(torch.median(MSE_KF_data_linear_arr))
-        # KF_data_MSE_std_dB = 10 * torch.log10(torch.std(MSE_KF_data_linear_arr))
-        # print("kalman Filter - Data:",
-        #       "MSE - mean", KF_data_MSE_mean_dB, "[dB]",
-        #       "MSE - median", KF_data_MSE_median_dB, "[dB]",
-        #       "MSE - std", KF_data_MSE_std_dB, "[dB]")
-        
-        # KN_MSE_mean_dB = 10 * torch.log10(torch.mean(MSE_KN_linear_arr))
-        # KN_MSE_median_dB = 10 * torch.log10(torch.median(MSE_KN_linear_arr))
-        # KN_MSE_std_dB = 10 * torch.log10(torch.std(MSE_KN_linear_arr))
-        
-        # print("kalman Net:",
-        #       "MSE - mean", KN_MSE_mean_dB, "[dB]",
-        #       "MSE - median", KN_MSE_median_dB, "[dB]",
-        #       "MSE - std", KN_MSE_std_dB, "[dB]")
-
-
-class Plot_RTS(Plot):
+class Plot_RTS(Plot_KF):
 
     def __init__(self, folderName, modelName):
         self.folderName = folderName
@@ -281,17 +235,22 @@ class Plot_RTS(Plot):
         ####################
         ### dB Histogram ###
         ####################
-        plt.figure(figsize=(25, 10))
-        sns.distplot(10 * torch.log10(MSE_RTSNet_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 5}, color='b', label = 'RTSNet')
-        sns.distplot(10 * torch.log10(MSE_KF_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3}, color= 'orange', label = 'Kalman Filter')
-        sns.distplot(10 * torch.log10(MSE_RTS_data_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3.2,"linestyle":'--'}, color= 'g', label = 'RTS Smoother')
-
-        plt.title(self.modelName + ":" +"Histogram [dB]",fontsize=fontSize)
-        plt.legend(fontsize=fontSize)
-        plt.xlabel('MSE Loss Value [dB]', fontsize=fontSize)
-        plt.ylabel('Percentage', fontsize=fontSize)
-        plt.tick_params(labelsize=fontSize)
+        plt.figure(figsize=(10, 25))
+        ax = sns.displot(
+            {self.modelName: 10 * torch.log10(MSE_RTSNet_linear_arr), 
+            'Kalman Filter': 10 * torch.log10(MSE_KF_linear_arr),
+            'RTS Smoother': 10 * torch.log10(MSE_RTS_data_linear_arr)},  # Use a dict to assign labels to each curve
+            kind="kde",
+            common_norm=False,  # Normalize each distribution independently: the area under each curve equals 1.
+            palette=["blue", "orange", "g"],  # Use palette for multiple colors
+            linewidth= 1,
+        )
+        plt.title(self.modelName + ":" +"Histogram [dB]")
+        plt.xlabel('MSE Loss Value [dB]')
+        plt.ylabel('Percentage')
+        sns.move_legend(ax, "upper right")
         plt.grid(True)
+        plt.tight_layout()
         plt.savefig(fileName)
 
     def KF_RTS_Plot_Linear(self, r, MSE_KF_RTS_dB,PlotResultName):
@@ -379,6 +338,41 @@ class Plot_RTS(Plot):
         plt.title('MSE vs inverse noise variance with inaccurate SS knowledge', fontsize=32)
         plt.grid(True)
         plt.savefig(fileName)  
+
+    def plotTraj_CA(self,test_target, RTS_out, rtsnet_out, dim, file_name):
+        legend = ["RTSNet", "Ground Truth", "MB RTS"]
+        font_size = 14
+        T_test = rtsnet_out[0].size()[1]
+        x_plt = range(0, T_test)
+        if dim==0:#position
+            plt.plot(x_plt, rtsnet_out[0][0,:].detach().numpy(), label=legend[0])
+            plt.plot(x_plt, test_target[0][0,:].detach().numpy(), label=legend[1])
+            plt.plot(x_plt, RTS_out[0][0,:], label=legend[2])
+            plt.legend(fontsize=font_size)
+            plt.xlabel('t', fontsize=font_size)
+            plt.ylabel('position', fontsize=font_size)
+            plt.savefig(file_name) 
+            plt.clf()
+        elif dim==1:#velocity
+            plt.plot(x_plt, rtsnet_out[0][1,:].detach().numpy(), label=legend[0])
+            plt.plot(x_plt, test_target[0][1,:].detach().numpy(), label=legend[1])
+            plt.plot(x_plt, RTS_out[0][1,:], label=legend[2])
+            plt.legend(fontsize=font_size)
+            plt.xlabel('t', fontsize=font_size)
+            plt.ylabel('velocity', fontsize=font_size)
+            plt.savefig(file_name)
+            plt.clf()
+        elif dim==2:#acceleration
+            plt.plot(x_plt, rtsnet_out[0][2,:].detach().numpy(), label=legend[0])
+            plt.plot(x_plt, test_target[0][2,:].detach().numpy(), label=legend[1])
+            plt.plot(x_plt, RTS_out[0][2,:], label=legend[2])
+            plt.legend(fontsize=font_size)
+            plt.xlabel('t', fontsize=font_size)
+            plt.ylabel('acceleration', fontsize=font_size)
+            plt.savefig(file_name)
+            plt.clf()
+        else:
+            print("invalid dimension")
 
 class Plot_extended(Plot_RTS):
     def EKFPlot_Hist(self, MSE_EKF_linear_arr):   
@@ -504,18 +498,33 @@ class Plot_extended(Plot_RTS):
         ### dB Histogram ###
         ####################
         plt.figure(figsize=(25, 10))
-        sns.distplot(10 * torch.log10(MSE_RTSNet_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 5}, color='b', label = self.modelName)
-        sns.distplot(10 * torch.log10(MSE_EKF_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3}, color= 'orange', label = 'EKF')
-        sns.distplot(10 * torch.log10(MSE_ERTS_data_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3.2,"linestyle":'--'},color= 'g', label = 'RTS')
-
-        plt.title(self.modelName + ":" +"Histogram [dB]",fontsize=fontSize)
-        plt.legend(fontsize=fontSize)
-        plt.xlabel('MSE Loss Value [dB]', fontsize=fontSize)
-        plt.ylabel('Percentage', fontsize=fontSize)
-        plt.tick_params(labelsize=fontSize)
+        # sns.distplot(10 * torch.log10(MSE_RTSNet_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 5}, color='b', label = self.modelName)
+        # sns.distplot(10 * torch.log10(MSE_EKF_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3}, color= 'orange', label = 'EKF')
+        # sns.distplot(10 * torch.log10(MSE_ERTS_data_linear_arr), hist=False, kde=True, kde_kws={'linewidth': 3.2,"linestyle":'--'},color= 'g', label = 'RTS')
+       
+        # plt.title(self.modelName + ":" +"Histogram [dB]",fontsize=fontSize)
+        # plt.legend(fontsize=fontSize)
+        # plt.xlabel('MSE Loss Value [dB]', fontsize=fontSize)
+        # plt.ylabel('Percentage', fontsize=fontSize)
+        # plt.tick_params(labelsize=fontSize)
+        # plt.grid(True)
+        # plt.savefig(fileName)
+        ax = sns.displot(
+            {self.modelName: 10 * torch.log10(MSE_RTSNet_linear_arr), 
+            'Kalman Filter': 10 * torch.log10(MSE_EKF_linear_arr),
+            'RTS Smoother': 10 * torch.log10(MSE_ERTS_data_linear_arr)},  # Use a dict to assign labels to each curve
+            kind="kde",
+            common_norm=False,  # Normalize each distribution independently: the area under each curve equals 1.
+            palette=["blue", "orange", "g"],  # Use palette for multiple colors
+            linewidth= 1,
+        )
+        plt.title(self.modelName + ":" +"Histogram [dB]")
+        plt.xlabel('MSE Loss Value [dB]')
+        plt.ylabel('Percentage')
+        sns.move_legend(ax, "upper right")
         plt.grid(True)
+        plt.tight_layout()
         plt.savefig(fileName)
-
 
     def NNPlot_epochs_KF_RTS(self, N_MiniBatchTrain_plt, BatchSize, MSE_EKF_dB_avg, MSE_ERTS_dB_avg,
                       MSE_KNet_test_dB_avg, MSE_KNet_cv_dB_epoch, MSE_KNet_train_dB_epoch,
@@ -568,20 +577,21 @@ class Plot_extended(Plot_RTS):
 
     def plotTrajectories(self,inputs, dim, titles, file_name):
     
-        fig = plt.figure(figsize=(15,10))
+        fig = plt.figure(figsize=(15, 10))
         plt.Axes (fig, [0,0,1,1])
         # plt.subplots_adjust(wspace=-0.2, hspace=-0.2)
         matrix_size = int(np.ceil(np.sqrt(len(inputs))))
         #gs1 = gridspec.GridSpec(matrix_size,matrix_size)
         gs1 = gridspec.GridSpec(3,2)
+        gs1.update(wspace=0, hspace=0)
         gs2 = gridspec.GridSpec(5,1)
         gs2.update(wspace=0, hspace=1)
         plt.rcParams["figure.frameon"] = False
         plt.rcParams["figure.constrained_layout.use"]= True
         i=0
         for title in titles:
-            inputs_numpy = inputs[i].detach().numpy()
-            gs1.update(wspace=0,hspace=0)
+            inputs_numpy = inputs[i][0].detach().numpy()
+            # gs1.update(wspace=-0.3,hspace=-0.3)
             if(dim==3):
                 plt.rcParams["figure.frameon"] = False
                 ax = fig.add_subplot(gs1[i],projection='3d')
@@ -590,22 +600,29 @@ class Plot_extended(Plot_RTS):
                 # else:
                 #     ax = fig.add_subplot(gs1[i:i+2],projection='3d')
 
-                y_al = 0.8
+                y_al = 0.73
                 if(title == "True Trajectory"):
                     c = 'k'
                 elif(title == "Observation"):
                     c = 'r'
-                elif(title == "Extended RTS" or title =="Extended Kalman Filter"):
+                elif(title == "Extended RTS"):
                     c = 'b'
-                elif(title == "RTSNet" or title =="KalmanNet"):
+                    y_al = 0.68
+                elif(title == "RTSNet"):
                     c = 'g'
+                elif(title == "Particle Smoother"):
+                    c = 'c'
+                elif(title == "Vanilla RNN"):
+                    c = 'm'
+                elif(title == "KNet"):
+                    c = 'y'               
                 else:
-                    c = 'grey'
-                    # y_al = 0.68
+                    c = 'purple'
+                    y_al = 0.68
 
                 ax.set_axis_off()
-                # ax.set_title(title, y=y_al, fontdict={'fontsize': 15,'fontweight' : 20,'verticalalignment': 'baseline'})
-                ax.plot(inputs_numpy[0,0,:], inputs_numpy[0,1,:], inputs_numpy[0,2,:], c, linewidth=0.5)
+                ax.set_title(title, y=y_al, fontdict={'fontsize': 15,'fontweight' : 20,'verticalalignment': 'baseline'})
+                ax.plot(inputs_numpy[0,:], inputs_numpy[1,:], inputs_numpy[2,:], c, linewidth=0.5)
 
                 ## Plot display 
                 #ax.set_yticklabels([])
@@ -617,7 +634,7 @@ class Plot_extended(Plot_RTS):
 
             if(dim==2):
                 ax = fig.add_subplot(matrix_size, matrix_size,i+1)
-                ax.plot(inputs_numpy[0,0,:],inputs_numpy[0,1,:], 'b', linewidth=0.75)
+                ax.plot(inputs_numpy[0,:],inputs_numpy[1,:], 'b', linewidth=0.75)
                 ax.set_xlabel('x1')
                 ax.set_ylabel('x2')
                 ax.set_title(title, pad=10, fontdict={'fontsize': 20,'fontweight' : 20,'verticalalignment': 'baseline'})
@@ -679,7 +696,7 @@ class Plot_extended(Plot_RTS):
         ax2.grid(True)          
         plt.savefig(fileName)
 
-    def Partial_Plot_Pen(self, r, MSE_Partial_dB):
+    
         fileName = self.folderName + 'Nonlinear_Pen_PartialF'
         magnifying_glass, main_partial = plt.subplots(figsize = [20, 15])
         x_plt = 10 * torch.log10(1/r**2)
@@ -765,3 +782,38 @@ class Plot_extended(Plot_RTS):
         # plt.title('MSE vs inverse noise variance with inaccurate SS knowledge', fontsize=32)
         plt.grid(True)         
         plt.savefig(fileName)
+
+    def error_evolution(self,MSE_Net, trace_Net,MSE_KF, trace_KF):
+        fileName = self.folderName + 'error_evolution'
+        fontSize = 32
+        # Figure
+        fig, axs = plt.subplots(2, figsize = (25, 10))
+        # x_axis
+        x_plt = range(0, MSE_Net.size()[0])
+        ## Figure 1: Error
+        # Net
+        y_plt1 = MSE_Net.detach().numpy()
+        axs[0].plot(x_plt, y_plt1, '-bo', label=error_evol[0])
+        y_plt2 = trace_Net.detach().numpy()
+        axs[0].plot(x_plt, y_plt2, '--yo', label=error_evol[1])
+        # EKF
+        y_plt3 = MSE_KF.detach().numpy()
+        axs[0].plot(x_plt, y_plt3, '-ro', label=error_evol[2])
+        y_plt4 = trace_KF.detach().numpy()
+        axs[0].plot(x_plt, y_plt4, '--go', label=error_evol[3])
+        axs[0].legend(loc="upper right")
+
+        ## Figure 2: Error Deviation
+        # Net
+        y_plt5 = MSE_Net.detach().numpy() - trace_Net.detach().numpy()
+        axs[1].plot(x_plt, y_plt5, '-bo', label=error_evol[4])
+        # EKF
+        y_plt6 = MSE_KF.detach().numpy() - trace_KF.detach().numpy()
+        axs[1].plot(x_plt, y_plt6, '-ro', label=error_evol[5])
+        axs[1].legend(loc="upper right")
+        
+        axs[0].set(xlabel='Timestep', ylabel='Error [dB]')
+        axs[1].set(xlabel='Timestep', ylabel='Error Deviation[dB]')
+        axs[0].grid(True)
+        axs[1].grid(True)
+        fig.savefig(fileName)
