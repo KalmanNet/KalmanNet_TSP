@@ -75,7 +75,7 @@ def f_gen(x, jacobian=False):
     else:
         return torch.bmm(F, x)
 
-### f will be fed to smoothers & RTSNet, note that the mismatch comes from delta_t
+### f will be fed to filters and KNet, note that the mismatch comes from delta_t
 def f(x, jacobian=False):
     BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
@@ -92,7 +92,7 @@ def f(x, jacobian=False):
     else:
         return torch.bmm(F, x)
 
-### fInacc will be fed to smoothers & RTSNet, note that the mismatch comes from delta_t and J_mod
+### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and J_mod
 def fInacc(x, jacobian=False):
     BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
@@ -110,7 +110,7 @@ def fInacc(x, jacobian=False):
     else:
         return torch.bmm(F, x)
 
-### fInacc will be fed to smoothers & RTSNet, note that the mismatch comes from delta_t and rotation
+### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and rotation
 def fRotate(x, jacobian=False):
     BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 

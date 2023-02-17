@@ -4,7 +4,7 @@ import argparse
 def general_settings():
     ### Dataset settings
         # Sizes
-    parser = argparse.ArgumentParser(prog = 'RTSNet',\
+    parser = argparse.ArgumentParser(prog = 'KalmanNet',\
                                      description = 'Dataset, training and network parameters')
     parser.add_argument('--N_E', type=int, default=1000, metavar='trainset-size',
                         help='input training dataset size (# of sequences)')
@@ -53,9 +53,9 @@ def general_settings():
     
     ### KalmanNet settings
     parser.add_argument('--in_mult_KNet', type=int, default=5, metavar='in_mult_KNet',
-                        help='input dimension multiplier for KNet (FW pass of RTSNet)')
+                        help='input dimension multiplier for KNet')
     parser.add_argument('--out_mult_KNet', type=int, default=40, metavar='out_mult_KNet',
-                        help='output dimension multiplier for KNet (FW pass of RTSNet)')
+                        help='output dimension multiplier for KNet')
 
     args = parser.parse_args()
     return args
