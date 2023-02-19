@@ -7,7 +7,7 @@ from Simulations.Lorenz_Atractor.parameters import getJacobian
 
 class ExtendedKalmanFilter:
 
-    def __init__(self, SystemModel):
+    def __init__(self, SystemModel, args):
         self.f = SystemModel.f
         self.m = SystemModel.m
 
@@ -22,11 +22,17 @@ class ExtendedKalmanFilter:
 
         self.T = SystemModel.T
         self.T_test = SystemModel.T_test
+
+        # Device
+        if args.use_cuda:
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
    
     # Predict
     def Predict(self):
         # Predict the 1-st moment of x
-        self.m1x_prior = self.f(self.m1x_posterior)
+        self.m1x_prior = self.f(self.m1x_posterior).to(self.device)
         # Compute the Jacobians
         self.UpdateJacobians(getJacobian(self.m1x_posterior,self.f), getJacobian(self.m1x_prior, self.h))
         # Predict the 2-nd moment of x
@@ -72,15 +78,15 @@ class ExtendedKalmanFilter:
     #########################
 
     def UpdateJacobians(self, F, H):
-        self.batched_F = F
+        self.batched_F = F.to(self.device)
         self.batched_F_T = torch.transpose(F,1,2)
-        self.batched_H = H
+        self.batched_H = H.to(self.device)
         self.batched_H_T = torch.transpose(H,1,2)
     
     def Init_batched_sequence(self, m1x_0_batch, m2x_0_batch):
 
-            self.m1x_0_batch = m1x_0_batch # [batch_size, m, 1]
-            self.m2x_0_batch = m2x_0_batch # [batch_size, m, m]
+            self.m1x_0_batch = m1x_0_batch.to(self.device) # [batch_size, m, 1]
+            self.m2x_0_batch = m2x_0_batch.to(self.device) # [batch_size, m, m]
 
     ######################
     ### Generate Batch ###
@@ -89,16 +95,17 @@ class ExtendedKalmanFilter:
         """
         input y: batch of observations [batch_size, n, T]
         """
+        y = y.to(self.device)
         self.batch_size = y.shape[0] # batch size
         T = y.shape[2] # sequence length (maximum length if randomLength=True)
 
         # Pre allocate KG array
-        self.KG_array = torch.zeros([self.batch_size,self.m,self.n,T])
+        self.KG_array = torch.zeros([self.batch_size,self.m,self.n,T]).to(self.device)
         self.i = 0 # Index for KG_array alocation
 
         # Allocate Array for 1st and 2nd order moments (use zero padding)
-        self.x = torch.zeros(self.batch_size, self.m, T)
-        self.sigma = torch.zeros(self.batch_size, self.m, self.m, T)
+        self.x = torch.zeros(self.batch_size, self.m, T).to(self.device)
+        self.sigma = torch.zeros(self.batch_size, self.m, self.m, T).to(self.device)
             
         # Set 1st and 2nd order moments for t=0
         self.m1x_posterior = self.m1x_0_batch

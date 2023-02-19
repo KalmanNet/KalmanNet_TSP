@@ -1,6 +1,4 @@
-import numpy as np
 import torch
-import pickle
 import torch.nn as nn
 from datetime import datetime
 
@@ -40,10 +38,20 @@ args.N_T = 10
 args.T = 3000
 args.T_test = 3000
 ### training parameters
+args.use_cuda = True # use GPU
 args.n_steps = 2000
-args.n_batch = 1
+args.n_batch = 16
 args.lr = 1e-3
 args.wd = 1e-4
+
+if args.use_cuda:
+   if torch.cuda.is_available():
+      device = torch.device('cuda')
+      print("Using GPU")
+   else:
+      raise Exception("No GPU found, please set args.use_cuda = False")
+else:
+    device = torch.device('cpu')
 
 offset = 0 # offset for the data
 chop = False # whether to chop the dataset sequences into smaller ones
@@ -95,7 +103,7 @@ else:
 #########################
 print("Data Load")
 #########################
-[train_input, train_target, cv_input_long, cv_target_long, test_input, test_target] = torch.load(DatafolderName+DatafileName)  
+[train_input, train_target, cv_input_long, cv_target_long, test_input, test_target] = torch.load(DatafolderName+DatafileName, map_location=device)  
 
 if(chop):
    print("chop training data")  

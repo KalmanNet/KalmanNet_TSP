@@ -6,12 +6,10 @@ from Filters.EKF import ExtendedKalmanFilter
 
 def EKFTest(args, SysModel, test_input, test_target, allStates=True,\
      randomInit = False,test_init=None, test_lengthMask=None):
-
+    # Number of test samples
     N_T = test_target.size()[0]
-
     # LOSS
-    loss_fn = nn.MSELoss(reduction='mean')
-    
+    loss_fn = nn.MSELoss(reduction='mean')  
     # MSE [Linear]
     MSE_EKF_linear_arr = torch.zeros(N_T)
     # Allocate empty tensor for output
@@ -24,7 +22,7 @@ def EKFTest(args, SysModel, test_input, test_target, allStates=True,\
             loc = torch.tensor([True,False]) # for position only
 
     start = time.time()
-    EKF = ExtendedKalmanFilter(SysModel)
+    EKF = ExtendedKalmanFilter(SysModel, args)
     # Init and Forward Computation   
     if(randomInit):
         EKF.Init_batched_sequence(test_init, SysModel.m2x_0.view(1,SysModel.m,SysModel.m).expand(N_T,-1,-1))        
