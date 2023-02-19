@@ -8,27 +8,23 @@ from Simulations.Lorenz_Atractor.parameters import getJacobian
 class ExtendedKalmanFilter:
 
     def __init__(self, SystemModel, args):
-        self.f = SystemModel.f
-        self.m = SystemModel.m
-
-        # Has to be transformed because of EKF non-linearity
-        self.Q = SystemModel.Q
-
-        self.h = SystemModel.h
-        self.n = SystemModel.n
-
-        # Has to be transofrmed because of EKF non-linearity
-        self.R = SystemModel.R
-
-        self.T = SystemModel.T
-        self.T_test = SystemModel.T_test
-
         # Device
         if args.use_cuda:
             self.device = torch.device('cuda')
         else:
             self.device = torch.device('cpu')
-   
+        # process model
+        self.f = SystemModel.f
+        self.m = SystemModel.m
+        self.Q = SystemModel.Q.to(self.device)
+        # observation model
+        self.h = SystemModel.h
+        self.n = SystemModel.n
+        self.R = SystemModel.R.to(self.device)
+        # sequence length (use maximum length if random length case)
+        self.T = SystemModel.T
+        self.T_test = SystemModel.T_test
+  
     # Predict
     def Predict(self):
         # Predict the 1-st moment of x
@@ -85,8 +81,8 @@ class ExtendedKalmanFilter:
     
     def Init_batched_sequence(self, m1x_0_batch, m2x_0_batch):
 
-            self.m1x_0_batch = m1x_0_batch.to(self.device) # [batch_size, m, 1]
-            self.m2x_0_batch = m2x_0_batch.to(self.device) # [batch_size, m, m]
+            self.m1x_0_batch = m1x_0_batch # [batch_size, m, 1]
+            self.m2x_0_batch = m2x_0_batch # [batch_size, m, m]
 
     ######################
     ### Generate Batch ###
@@ -108,8 +104,8 @@ class ExtendedKalmanFilter:
         self.sigma = torch.zeros(self.batch_size, self.m, self.m, T).to(self.device)
             
         # Set 1st and 2nd order moments for t=0
-        self.m1x_posterior = self.m1x_0_batch
-        self.m2x_posterior = self.m2x_0_batch
+        self.m1x_posterior = self.m1x_0_batch.to(self.device)
+        self.m2x_posterior = self.m2x_0_batch.to(self.device)
 
         # Generate in a batched manner
         for t in range(0, T):

@@ -60,12 +60,13 @@ C = torch.tensor([[-10, 10,    0],
 ######################################################
 ### f_gen is for dataset generation
 def f_gen(x, jacobian=False):
-    BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
+    BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
     BX[:,2,0] = torch.squeeze(x[:,1,:])
-    A = torch.add(BX, C)  
+    Const = C.to(x.device)
+    A = torch.add(BX, Const)  
     # Taylor Expansion for F    
-    F = torch.eye(m)
+    F = torch.eye(m).to(x.device)
     F = F.reshape((1, m, m)).repeat(x.shape[0], 1, 1) # [batch_size, m, m] identity matrix
     for j in range(1,J+1):
         F_add = (torch.matrix_power(A*delta_t_gen, j)/math.factorial(j))
@@ -77,12 +78,13 @@ def f_gen(x, jacobian=False):
 
 ### f will be fed to filters and KNet, note that the mismatch comes from delta_t
 def f(x, jacobian=False):
-    BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
+    BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
     BX[:,2,0] = torch.squeeze(x[:,1,:]) 
-    A = torch.add(BX, C) 
+    Const = C.to(x.device)
+    A = torch.add(BX, Const) 
     # Taylor Expansion for F    
-    F = torch.eye(m)
+    F = torch.eye(m).to(x.device)
     F = F.reshape((1, m, m)).repeat(x.shape[0], 1, 1) # [batch_size, m, m] identity matrix
     for j in range(1,J+1):
         F_add = (torch.matrix_power(A*delta_t, j)/math.factorial(j))
@@ -94,12 +96,13 @@ def f(x, jacobian=False):
 
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and J_mod
 def fInacc(x, jacobian=False):
-    BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
+    BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
     BX[:,2,0] = torch.squeeze(x[:,1,:]) 
-    A = torch.add(BX, C)     
+    Const = C.to(x.device)
+    A = torch.add(BX, Const)     
     # Taylor Expansion for F    
-    F = torch.eye(m)
+    F = torch.eye(m).to(x.device)
     F = F.reshape((1, m, m))
     F = F.repeat(x.shape[0], 1, 1) # [batch_size, m, m] identity matrix
     for j in range(1,J_mod+1):
@@ -112,12 +115,13 @@ def fInacc(x, jacobian=False):
 
 ### fInacc will be fed to filters and KNet, note that the mismatch comes from delta_t and rotation
 def fRotate(x, jacobian=False):
-    BX = torch.zeros([x.shape[0],m,m]).float() #[batch_size, m, m]
+    BX = torch.zeros([x.shape[0],m,m]).float().to(x.device) #[batch_size, m, m]
     BX[:,1,0] = torch.squeeze(-x[:,2,:]) 
     BX[:,2,0] = torch.squeeze(x[:,1,:])
-    A = torch.add(BX, C)   
+    Const = C.to(x.device)
+    A = torch.add(BX, Const)   
     # Taylor Expansion for F    
-    F = torch.eye(m)
+    F = torch.eye(m).to(x.device)
     F = F.reshape((1, m, m))
     F = F.repeat(x.shape[0], 1, 1) # [batch_size, m, m] identity matrix
     for j in range(1,J+1):
@@ -137,7 +141,7 @@ H_Rotate = torch.mm(RotMatrix,H_design)
 H_Rotate_inv = torch.inverse(H_Rotate)
 
 def h(x, jacobian=False):
-    H = H_design.reshape((1, n, n)).repeat(x.shape[0], 1, 1) # [batch_size, n, n] identity matrix   
+    H = H_design.to(x.device).reshape((1, n, n)).repeat(x.shape[0], 1, 1) # [batch_size, n, n] identity matrix   
     y = torch.bmm(H,x)
     if jacobian:
         return y, H
@@ -148,14 +152,14 @@ def h_nonlinear(x):
     return toSpherical(x)
 
 def hRotate(x, jacobian=False):
-    H = H_Rotate.reshape((1, n, n)).repeat(x.shape[0], 1, 1) # [batch_size, n, n] rotated matrix
+    H = H_Rotate.to(x.device).reshape((1, n, n)).repeat(x.shape[0], 1, 1)# [batch_size, n, n] rotated matrix
     if jacobian:
         return torch.bmm(H,x), H
     else:
         return torch.bmm(H,x)
 
 def h_nobatch(x, jacobian=False):
-    H = H_design
+    H = H_design.to(x.device)
     y = torch.matmul(H,x)
     if jacobian:
         return y, H
