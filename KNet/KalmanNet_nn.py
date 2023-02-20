@@ -203,7 +203,7 @@ class KalmanNetNN(torch.nn.Module):
     def KGain_step(self, obs_diff, obs_innov_diff, fw_evol_diff, fw_update_diff):
 
         def expand_dim(x):
-            expanded = torch.empty(self.seq_len_input, self.batch_size, x.shape[-1])
+            expanded = torch.empty(self.seq_len_input, self.batch_size, x.shape[-1]).to(self.device)
             expanded[0, :, :] = x
             return expanded
 
