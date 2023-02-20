@@ -14,6 +14,12 @@ class KalmanNetNN(torch.nn.Module):
     
     def NNBuild(self, SysModel, args):
 
+        # Device
+        if args.use_cuda:
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
+
         self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n)
 
         # Number of neurons in the 1st hidden layer
@@ -32,33 +38,33 @@ class KalmanNetNN(torch.nn.Module):
         self.seq_len_input = 1 # KNet calculates time-step by time-step
         self.batch_size = args.n_batch # Batch size
 
-        self.prior_Q = prior_Q
-        self.prior_Sigma = prior_Sigma
-        self.prior_S = prior_S
+        self.prior_Q = prior_Q.to(self.device)
+        self.prior_Sigma = prior_Sigma.to(self.device)
+        self.prior_S = prior_S.to(self.device)
         
 
 
         # GRU to track Q
         self.d_input_Q = self.m * args.in_mult_KNet
         self.d_hidden_Q = self.m ** 2
-        self.GRU_Q = nn.GRU(self.d_input_Q, self.d_hidden_Q)
+        self.GRU_Q = nn.GRU(self.d_input_Q, self.d_hidden_Q).to(self.device)
 
         # GRU to track Sigma
         self.d_input_Sigma = self.d_hidden_Q + self.m * args.in_mult_KNet
         self.d_hidden_Sigma = self.m ** 2
-        self.GRU_Sigma = nn.GRU(self.d_input_Sigma, self.d_hidden_Sigma)
+        self.GRU_Sigma = nn.GRU(self.d_input_Sigma, self.d_hidden_Sigma).to(self.device)
        
         # GRU to track S
         self.d_input_S = self.n ** 2 + 2 * self.n * args.in_mult_KNet
         self.d_hidden_S = self.n ** 2
-        self.GRU_S = nn.GRU(self.d_input_S, self.d_hidden_S)
+        self.GRU_S = nn.GRU(self.d_input_S, self.d_hidden_S).to(self.device)
         
         # Fully connected 1
         self.d_input_FC1 = self.d_hidden_Sigma
         self.d_output_FC1 = self.n ** 2
         self.FC1 = nn.Sequential(
                 nn.Linear(self.d_input_FC1, self.d_output_FC1),
-                nn.ReLU())
+                nn.ReLU()).to(self.device)
 
         # Fully connected 2
         self.d_input_FC2 = self.d_hidden_S + self.d_hidden_Sigma
@@ -67,42 +73,42 @@ class KalmanNetNN(torch.nn.Module):
         self.FC2 = nn.Sequential(
                 nn.Linear(self.d_input_FC2, self.d_hidden_FC2),
                 nn.ReLU(),
-                nn.Linear(self.d_hidden_FC2, self.d_output_FC2))
+                nn.Linear(self.d_hidden_FC2, self.d_output_FC2)).to(self.device)
 
         # Fully connected 3
         self.d_input_FC3 = self.d_hidden_S + self.d_output_FC2
         self.d_output_FC3 = self.m ** 2
         self.FC3 = nn.Sequential(
                 nn.Linear(self.d_input_FC3, self.d_output_FC3),
-                nn.ReLU())
+                nn.ReLU()).to(self.device)
 
         # Fully connected 4
         self.d_input_FC4 = self.d_hidden_Sigma + self.d_output_FC3
         self.d_output_FC4 = self.d_hidden_Sigma
         self.FC4 = nn.Sequential(
                 nn.Linear(self.d_input_FC4, self.d_output_FC4),
-                nn.ReLU())
+                nn.ReLU()).to(self.device)
         
         # Fully connected 5
         self.d_input_FC5 = self.m
         self.d_output_FC5 = self.m * args.in_mult_KNet
         self.FC5 = nn.Sequential(
                 nn.Linear(self.d_input_FC5, self.d_output_FC5),
-                nn.ReLU())
+                nn.ReLU()).to(self.device)
 
         # Fully connected 6
         self.d_input_FC6 = self.m
         self.d_output_FC6 = self.m * args.in_mult_KNet
         self.FC6 = nn.Sequential(
                 nn.Linear(self.d_input_FC6, self.d_output_FC6),
-                nn.ReLU())
+                nn.ReLU()).to(self.device)
         
         # Fully connected 7
         self.d_input_FC7 = 2 * self.n
         self.d_output_FC7 = 2 * self.n * args.in_mult_KNet
         self.FC7 = nn.Sequential(
                 nn.Linear(self.d_input_FC7, self.d_output_FC7),
-                nn.ReLU())
+                nn.ReLU()).to(self.device)
 
     ##################################
     ### Initialize System Dynamics ###
@@ -126,7 +132,7 @@ class KalmanNetNN(torch.nn.Module):
         """
         self.T = T
 
-        self.m1x_posterior = M1_0
+        self.m1x_posterior = M1_0.to(self.device)
         self.m1x_posterior_previous = self.m1x_posterior
         self.m1x_prior_previous = self.m1x_posterior
         self.y_previous = self.h(self.m1x_posterior)
@@ -264,6 +270,7 @@ class KalmanNetNN(torch.nn.Module):
     ### Forward ###
     ###############
     def forward(self, y):
+        y = y.to(self.device)
         return self.KNet_step(y)
 
     #########################

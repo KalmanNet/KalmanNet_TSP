@@ -31,6 +31,10 @@ class Pipeline_EKF:
 
     def setTrainingParams(self, args):
         self.args = args
+        if args.use_cuda:
+            self.device = torch.device('cuda')
+        else:
+            self.device = torch.device('cpu')
         self.N_steps = args.n_steps  # Number of Training Steps
         self.N_B = args.n_batch # Number of Samples in Batch
         self.learningRate = args.lr # Learning Rate
@@ -83,9 +87,9 @@ class Pipeline_EKF:
             self.model.init_hidden_KNet()
 
             # Init Training Batch tensors
-            y_training_batch = torch.zeros([self.N_B, SysModel.n, SysModel.T])
-            train_target_batch = torch.zeros([self.N_B, SysModel.m, SysModel.T])
-            x_out_training_batch = torch.zeros([self.N_B, SysModel.m, SysModel.T])
+            y_training_batch = torch.zeros([self.N_B, SysModel.n, SysModel.T]).to(self.device)
+            train_target_batch = torch.zeros([self.N_B, SysModel.m, SysModel.T]).to(self.device)
+            x_out_training_batch = torch.zeros([self.N_B, SysModel.m, SysModel.T]).to(self.device)
             if self.args.randomLength:
                 MSE_train_linear_LOSS = torch.zeros([self.N_B])
                 MSE_cv_linear_LOSS = torch.zeros([self.N_CV])
@@ -105,7 +109,7 @@ class Pipeline_EKF:
             
             # Init Sequence
             if(randomInit):
-                train_init_batch = torch.empty([self.N_B, SysModel.m,1])
+                train_init_batch = torch.empty([self.N_B, SysModel.m,1]).to(self.device)
                 ii = 0
                 for index in n_e:
                     train_init_batch[ii,:,0] = torch.squeeze(train_init[index])
@@ -201,7 +205,7 @@ class Pipeline_EKF:
 
                 SysModel.T_test = cv_input.size()[-1] # T_test is the maximum length of the CV sequences
 
-                x_out_cv_batch = torch.empty([self.N_CV, SysModel.m, SysModel.T_test])
+                x_out_cv_batch = torch.empty([self.N_CV, SysModel.m, SysModel.T_test]).to(self.device)
                 
                 # Init Sequence
                 if(randomInit):
@@ -262,11 +266,16 @@ class Pipeline_EKF:
     def NNTest(self, SysModel, test_input, test_target, path_results, MaskOnState=False,\
      randomInit=False,test_init=None,load_model=False,load_model_path=None,\
         test_lengthMask=None):
+        # Load model
+        if load_model:
+            self.model = torch.load(load_model_path, map_location=self.device) 
+        else:
+            self.model = torch.load(path_results+'best-model.pt', map_location=self.device) 
 
         self.N_T = test_input.shape[0]
         SysModel.T_test = test_input.size()[-1]
         self.MSE_test_linear_arr = torch.zeros([self.N_T])
-        x_out_test = torch.zeros([self.N_T, SysModel.m,SysModel.T_test])
+        x_out_test = torch.zeros([self.N_T, SysModel.m,SysModel.T_test]).to(self.device)
 
         if MaskOnState:
             mask = torch.tensor([True,False,False])
@@ -276,11 +285,6 @@ class Pipeline_EKF:
         # MSE LOSS Function
         loss_fn = nn.MSELoss(reduction='mean')
 
-        # Load model
-        if load_model:
-            self.model = torch.load(load_model_path) 
-        else:
-            self.model = torch.load(path_results+'best-model.pt')
         # Test mode
         self.model.eval()
         self.model.batch_size = self.N_T

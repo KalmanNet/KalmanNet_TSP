@@ -38,10 +38,10 @@ args.N_T = 10
 args.T = 3000
 args.T_test = 3000
 ### training parameters
-args.use_cuda = True # use GPU
+args.use_cuda = True # use GPU or not
 args.n_steps = 2000
-args.n_batch = 16
-args.lr = 1e-3
+args.n_batch = 8
+args.lr = 1e-4
 args.wd = 1e-4
 
 if args.use_cuda:
@@ -52,6 +52,7 @@ if args.use_cuda:
       raise Exception("No GPU found, please set args.use_cuda = False")
 else:
     device = torch.device('cpu')
+    print("Using CPU")
 
 offset = 0 # offset for the data
 chop = False # whether to chop the dataset sequences into smaller ones
@@ -104,11 +105,11 @@ else:
 print("Data Load")
 #########################
 [train_input, train_target, cv_input_long, cv_target_long, test_input, test_target] = torch.load(DatafolderName+DatafileName, map_location=device)  
-
 if(chop):
    print("chop training data")  
    [train_target, train_input, train_init] = Short_Traj_Split(train_target, train_input, args.T)
    args.N_E = train_target.size()[0]
+print("load dataset to device:",train_input.device)
 print("testset size:",test_target.size())
 print("trainset size:",train_target.size())
 print("cvset size:",cv_target_long.size())
