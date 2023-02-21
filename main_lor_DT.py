@@ -57,7 +57,7 @@ else:
 offset = 0 # offset for the data
 chop = False # whether to chop data sequences into shorter sequences
 path_results = 'KNet/'
-DatafolderName = 'Simulations/Lorenz_Atractor/data/T100_Hrot1' + '/'
+DatafolderName = 'Simulations/Lorenz_Atractor/data' + '/'
 switch = 'partial' # 'full' or 'partial' or 'estH'
    
 # noise q and r

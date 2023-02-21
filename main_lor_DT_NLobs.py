@@ -61,7 +61,7 @@ offset = 0
 chop = False
 sequential_training = False
 path_results = 'KNet/'
-DatafolderName = 'Simulations/Lorenz_Atractor/data/T20_hNL' + '/'
+DatafolderName = 'Simulations/Lorenz_Atractor/data' + '/'
 r2 = torch.tensor([1e-3]) # [10, 1, 0.1, 0.01, 1e-3]
 vdB = 0 # ratio v=q2/r2
 v = 10**(vdB/10)

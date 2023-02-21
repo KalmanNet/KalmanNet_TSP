@@ -59,10 +59,12 @@ class SystemModel:
         
 
     def f(self, x):
-        return torch.bmm(self.F.view(1,self.F.shape[0],self.F.shape[1]).expand(x.shape[0],-1,-1), x)
+        batched_F = self.F.to(x.device).view(1,self.F.shape[0],self.F.shape[1]).expand(x.shape[0],-1,-1)
+        return torch.bmm(batched_F, x)
     
     def h(self, x):
-        return torch.bmm(self.H.view(1,self.H.shape[0],self.H.shape[1]).expand(x.shape[0],-1,-1), x)
+        batched_H = self.H.to(x.device).view(1,self.H.shape[0],self.H.shape[1]).expand(x.shape[0],-1,-1)
+        return torch.bmm(batched_H, x)
         
     #####################
     ### Init Sequence ###

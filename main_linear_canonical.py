@@ -32,7 +32,7 @@ path_results = 'KNet/'
 ####################
 args = config.general_settings()
 
-### dataset parameters
+### dataset parameters ##################################################
 args.N_E = 1000
 args.N_CV = 100
 args.N_T = 200
@@ -69,15 +69,8 @@ v = 10**(vdB/10)
 q2 = torch.mul(v,r2)
 print("1/r2 [dB]: ", 10 * torch.log10(1/r2[0]))
 print("1/q2 [dB]: ", 10 * torch.log10(1/q2[0]))
-# True model
-Q = q2 * Q_structure
-R = r2 * R_structure
-sys_model = SystemModel(F, Q, H, R, args.T, args.T_test)
-sys_model.InitSequence(m1_0, m2_0)
-print("State Evolution Matrix:",F)
-print("Observation Matrix:",H)
 
-### training parameters
+### training parameters ##################################################
 args.use_cuda = True # use GPU or not
 args.n_steps = 4000
 args.n_batch = 30
@@ -94,10 +87,18 @@ else:
     device = torch.device('cpu')
     print("Using CPU")
 
+### True model ##################################################
+Q = q2 * Q_structure
+R = r2 * R_structure
+sys_model = SystemModel(F, Q, H, R, args.T, args.T_test)
+sys_model.InitSequence(m1_0, m2_0)
+print("State Evolution Matrix:",F)
+print("Observation Matrix:",H)
+
 ###################################
 ### Data Loader (Generate Data) ###
 ###################################
-dataFolderName = 'Simulations/Linear_canonical/data/v-20dB' + '/'
+dataFolderName = 'Simulations/Linear_canonical' + '/'
 dataFileName = '2x2_rq020_T100.pt'
 print("Start Data Gen")
 DataGen(args, sys_model, dataFolderName + dataFileName)
@@ -135,9 +136,9 @@ print("Observation Noise Floor - STD:", obs_std_dB, "[dB]")
 ##############################
 print("Evaluate Kalman Filter True")
 if args.randomInit_test:
-   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(args, sys_model, test_input, test_target, randomInit = True, test_init=test_init, test_lengthMask=test_lengthMask)
+   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg, KF_out] = KFTest(args, sys_model, test_input, test_target, randomInit = True, test_init=test_init, test_lengthMask=test_lengthMask)
 else: 
-   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg] = KFTest(args, sys_model, test_input, test_target, test_lengthMask=test_lengthMask)
+   [MSE_KF_linear_arr, MSE_KF_linear_avg, MSE_KF_dB_avg, KF_out] = KFTest(args, sys_model, test_input, test_target, test_lengthMask=test_lengthMask)
 
 
 ##########################
