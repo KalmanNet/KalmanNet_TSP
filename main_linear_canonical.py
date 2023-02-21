@@ -98,7 +98,7 @@ print("Observation Matrix:",H)
 ###################################
 ### Data Loader (Generate Data) ###
 ###################################
-dataFolderName = 'Simulations/Linear_canonical' + '/'
+dataFolderName = 'Simulations/Linear_canonical/data' + '/'
 dataFileName = '2x2_rq020_T100.pt'
 print("Start Data Gen")
 DataGen(args, sys_model, dataFolderName + dataFileName)
