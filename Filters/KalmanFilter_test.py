@@ -20,7 +20,7 @@ def KFTest(args, SysModel, test_input, test_target, allStates=True,\
 
     start = time.time()
 
-    KF = KalmanFilter(SysModel)
+    KF = KalmanFilter(SysModel, args)
     # Init and Forward Computation 
     if(randomInit):
         KF.Init_batched_sequence(test_init, SysModel.m2x_0.view(1,SysModel.m,SysModel.m).expand(args.N_T,-1,-1))        

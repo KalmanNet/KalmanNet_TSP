@@ -38,10 +38,21 @@ args.N_T = 200
 args.T = 100
 args.T_test = 100
 ### training parameters
+args.use_cuda = True # use GPU or not
 args.n_steps = 2000
 args.n_batch = 30
 args.lr = 1e-3
 args.wd = 1e-3
+
+if args.use_cuda:
+   if torch.cuda.is_available():
+      device = torch.device('cuda')
+      print("Using GPU")
+   else:
+      raise Exception("No GPU found, please set args.use_cuda = False")
+else:
+    device = torch.device('cpu')
+    print("Using CPU")
 
 offset = 0 # offset for the data
 chop = False # whether to chop data sequences into shorter sequences
@@ -75,7 +86,7 @@ print("Start Data Gen")
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
 print("Data Load")
 print(dataFileName[0])
-[train_input_long,train_target_long, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0])  
+[train_input_long,train_target_long, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)  
 if chop: 
    print("chop training data")    
    [train_target, train_input, train_init] = Short_Traj_Split(train_target_long, train_input_long, args.T)

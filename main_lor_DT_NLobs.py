@@ -39,12 +39,23 @@ args.in_mult_KNet = 40
 args.out_mult_KNet = 5
 
 ### training parameters
+args.use_cuda = True # use GPU or not
 args.n_steps = 2000
 args.n_batch = 100
 args.lr = 1e-4
 args.wd = 1e-4
 args.CompositionLoss = True
 args.alpha = 0.5
+
+if args.use_cuda:
+   if torch.cuda.is_available():
+      device = torch.device('cuda')
+      print("Using GPU")
+   else:
+      raise Exception("No GPU found, please set args.use_cuda = False")
+else:
+    device = torch.device('cpu')
+    print("Using CPU")
 
 offset = 0
 chop = False
@@ -79,7 +90,7 @@ print("Start Data Gen")
 DataGen(args, sys_model, DatafolderName + dataFileName[0])
 print("Data Load")
 print(dataFileName[0])
-[train_input_long,train_target_long, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0])  
+[train_input_long,train_target_long, cv_input, cv_target, test_input, test_target,_,_,_] =  torch.load(DatafolderName + dataFileName[0], map_location=device)   
 if chop: 
    print("chop training data")    
    [train_target, train_input, train_init] = Short_Traj_Split(train_target_long, train_input_long, args.T)

@@ -78,10 +78,21 @@ print("State Evolution Matrix:",F)
 print("Observation Matrix:",H)
 
 ### training parameters
+args.use_cuda = True # use GPU or not
 args.n_steps = 4000
 args.n_batch = 30
 args.lr = 1e-4
 args.wd = 1e-3
+
+if args.use_cuda:
+   if torch.cuda.is_available():
+      device = torch.device('cuda')
+      print("Using GPU")
+   else:
+      raise Exception("No GPU found, please set args.use_cuda = False")
+else:
+    device = torch.device('cpu')
+    print("Using CPU")
 
 ###################################
 ### Data Loader (Generate Data) ###
@@ -92,9 +103,9 @@ print("Start Data Gen")
 DataGen(args, sys_model, dataFolderName + dataFileName)
 print("Data Load")
 if args.randomLength:
-   [train_input, train_target, cv_input, cv_target, test_input, test_target,train_init, cv_init, test_init, train_lengthMask,cv_lengthMask,test_lengthMask] = torch.load(dataFolderName + dataFileName)
+   [train_input, train_target, cv_input, cv_target, test_input, test_target,train_init, cv_init, test_init, train_lengthMask,cv_lengthMask,test_lengthMask] = torch.load(dataFolderName + dataFileName, map_location=device)
 else:
-   [train_input, train_target, cv_input, cv_target, test_input, test_target,_,_,_] = torch.load(dataFolderName + dataFileName)
+   [train_input, train_target, cv_input, cv_target, test_input, test_target,_,_,_] = torch.load(dataFolderName + dataFileName, map_location=device)
 
 print("trainset size:",train_target.size())
 print("cvset size:",cv_target.size())

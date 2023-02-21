@@ -44,14 +44,24 @@ args.randomInit_test = True
 args.T = 100
 args.T_test = 100
 ### training parameters
-KnownRandInit_train = True
+KnownRandInit_train = True # if true: use known random init for training, else: model is agnostic to random init
 KnownRandInit_cv = True
 KnownRandInit_test = True
-
+args.use_cuda = True # use GPU or not
 args.n_steps = 4000
 args.n_batch = 10
 args.lr = 1e-4
 args.wd = 1e-4
+
+if args.use_cuda:
+   if torch.cuda.is_available():
+      device = torch.device('cuda')
+      print("Using GPU")
+   else:
+      raise Exception("No GPU found, please set args.use_cuda = False")
+else:
+    device = torch.device('cpu')
+    print("Using CPU")
 
 if(args.randomInit_train or args.randomInit_cv or args.args.randomInit_test):
    std_gen = 1
@@ -99,7 +109,7 @@ else:
 print("Start Data Gen")
 utils.DataGen(args, sys_model_gen, DatafolderName+DatafileName)
 print("Load Original Data")
-[train_input, train_target, cv_input, cv_target, test_input, test_target,train_init,cv_init,test_init] = torch.load(DatafolderName+DatafileName)
+[train_input, train_target, cv_input, cv_target, test_input, test_target,train_init,cv_init,test_init] = torch.load(DatafolderName+DatafileName, map_location=device)
 if CV_model:# set state as (p,v) instead of (p,v,a)
    train_target = train_target[:,0:m_cv,:]
    train_init = train_init[:,0:m_cv]
