@@ -1,8 +1,6 @@
 # KalmanNet
 
-## Feb.13, 2023 Update: branch "batched"
-
-Support a batch of sequences being processed simultaneously, leading to dramatic efficiency improvement.
+## This branch is the old version. Please refer to branch main for better performance.
 
 ## Link to paper
 
@@ -10,7 +8,7 @@ Support a batch of sequences being processed simultaneously, leading to dramatic
 
 ## Running code
 
-### Branch - main
+### Branch - architecture #1
 
 This branch simulates architecture #1 in our paper. There are two main files simulating the linear and non-linear cases respectively.
 
@@ -31,28 +29,9 @@ python3 main_lorenz.py
 change the path_model parameter in filling_paths.py accordingly and then run main_lorenz.py.
 
 
-### Branch - new_architecture
-
-This branch simulates architecture #2 in our paper. There are two main files simulating the Discrete-Time and Decimation cases respectively.
-
-* Discrete-Time LA case
-
-```
-python3 main_lor_DT.py
-```
-
-* Decimated LA case
-
-```
-python3 main_lor_decimation.py
-```
-
-For pendulum, toy problem or real-world NCLT case, similarly, you could change the path_model parameter in filling_paths.py.
-
-
 ## Introduction to other files
 
-### Branch - main
+### Branch - architecture #1
 
 * KNet/
 
@@ -107,18 +86,6 @@ These are the pipeline files for linear and non-linear cases of KalmanNet respec
 * Plot.py
 
 This file mainly defines the plotting of training process, histogram, MSE results, etc.
-
-### Branch - new_architecture
-
-Since the file arrangement is very simular with the main branch, here we only briefly introduce the different parts.
-
-* KNet/KNet_TSP
-
-This folder stores the simulation results in our paper.
-
-* KalmanNet_nn.py
-
-This file specifies KalmanNet architecture #2.
 
 
 
