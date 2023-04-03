@@ -3,6 +3,7 @@
 import torch
 import torch.nn as nn
 import torch.nn.functional as func
+import torch.nn.init as init
 
 class KalmanNetNN(torch.nn.Module):
 
@@ -22,12 +23,6 @@ class KalmanNetNN(torch.nn.Module):
 
         self.InitSystemDynamics(SysModel.f, SysModel.h, SysModel.m, SysModel.n)
 
-        # Number of neurons in the 1st hidden layer
-        #H1_KNet = (SysModel.m + SysModel.n) * (10) * 8
-
-        # Number of neurons in the 2nd hidden layer
-        #H2_KNet = (SysModel.m * SysModel.n) * 1 * (4)
-
         self.InitKGainNet(SysModel.prior_Q, SysModel.prior_Sigma, SysModel.prior_S, args)
 
     ######################################
@@ -42,8 +37,8 @@ class KalmanNetNN(torch.nn.Module):
         self.prior_Sigma = prior_Sigma.to(self.device)
         self.prior_S = prior_S.to(self.device)
         
-
-
+      
+        ### Define Kalman Gain Network ###
         # GRU to track Q
         self.d_input_Q = self.m * args.in_mult_KNet
         self.d_hidden_Q = self.m ** 2
@@ -109,6 +104,59 @@ class KalmanNetNN(torch.nn.Module):
         self.FC7 = nn.Sequential(
                 nn.Linear(self.d_input_FC7, self.d_output_FC7),
                 nn.ReLU()).to(self.device)
+        
+        ### Initialize network parameters ###
+        # Apply Xavier initialization to GRU layers
+        # GRU Q
+        for name, param in self.GRU_Q.named_parameters():
+            if 'weight_ih' in name:
+                init.xavier_uniform_(param.data)
+            elif 'weight_hh' in name:
+                init.xavier_uniform_(param.data)
+            elif 'bias' in name:
+                param.data.fill_(0)
+        # GRU Sigma
+        for name, param in self.GRU_Sigma.named_parameters():
+            if 'weight_ih' in name:
+                init.xavier_uniform_(param.data)
+            elif 'weight_hh' in name:
+                init.xavier_uniform_(param.data)
+            elif 'bias' in name:
+                param.data.fill_(0)
+        # GRU S
+        for name, param in self.GRU_S.named_parameters():
+            if 'weight_ih' in name:
+                init.xavier_uniform_(param.data)
+            elif 'weight_hh' in name:
+                init.xavier_uniform_(param.data)
+            elif 'bias' in name:
+                param.data.fill_(0)
+
+        # Apply He initialization to FC layers
+        # FC1
+        init.kaiming_uniform_(self.FC1[0].weight, nonlinearity='relu')
+        self.FC1[0].bias.data.fill_(0)
+        # FC2
+        init.kaiming_uniform_(self.FC2[0].weight, nonlinearity='relu')
+        self.FC2[0].bias.data.fill_(0)
+        init.kaiming_uniform_(self.FC2[2].weight, nonlinearity='relu')
+        self.FC2[2].bias.data.fill_(0)
+        # FC3
+        init.kaiming_uniform_(self.FC3[0].weight, nonlinearity='relu')
+        self.FC3[0].bias.data.fill_(0)
+        # FC4
+        init.kaiming_uniform_(self.FC4[0].weight, nonlinearity='relu')
+        self.FC4[0].bias.data.fill_(0)
+        # FC5
+        init.kaiming_uniform_(self.FC5[0].weight, nonlinearity='relu')
+        self.FC5[0].bias.data.fill_(0)
+        # FC6
+        init.kaiming_uniform_(self.FC6[0].weight, nonlinearity='relu')
+        self.FC6[0].bias.data.fill_(0)
+        # FC7
+        init.kaiming_uniform_(self.FC7[0].weight, nonlinearity='relu')
+        self.FC7[0].bias.data.fill_(0)
+        
 
     ##################################
     ### Initialize System Dynamics ###
