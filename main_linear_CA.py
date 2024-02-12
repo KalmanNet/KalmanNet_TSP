@@ -14,7 +14,7 @@ from KNet.KalmanNet_nn import KalmanNetNN
 
 from Pipelines.Pipeline_EKF import Pipeline_EKF as Pipeline
 
-from Plot import Plot_KF as Plot
+from Plot import Plot_extended as Plot
 
 ################
 ### Get Time ###

@@ -217,7 +217,7 @@ class KalmanNetNN(torch.nn.Module):
         ####################
         
         # FC 5
-        in_FC5 = fw_evol_diff
+        in_FC5 = fw_update_diff
         out_FC5 = self.FC5(in_FC5)
 
         # Q-GRU
@@ -225,7 +225,7 @@ class KalmanNetNN(torch.nn.Module):
         out_Q, self.h_Q = self.GRU_Q(in_Q, self.h_Q)
 
         # FC 6
-        in_FC6 = fw_update_diff
+        in_FC6 = fw_evol_diff
         out_FC6 = self.FC6(in_FC6)
 
         # Sigma_GRU

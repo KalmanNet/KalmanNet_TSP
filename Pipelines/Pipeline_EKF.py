@@ -7,7 +7,7 @@ import torch
 import torch.nn as nn
 import random
 import time
-from Plot import Plot_KF
+from Plot import Plot_extended
 
 
 class Pipeline_EKF:
@@ -340,7 +340,7 @@ class Pipeline_EKF:
 
     def PlotTrain_KF(self, MSE_KF_linear_arr, MSE_KF_dB_avg):
 
-        self.Plot = Plot_KF(self.folderName, self.modelName)
+        self.Plot = Plot_extended(self.folderName, self.modelName)
 
         self.Plot.NNPlot_epochs(self.N_steps, MSE_KF_dB_avg,
                                 self.MSE_test_dB_avg, self.MSE_cv_dB_epoch, self.MSE_train_dB_epoch)
